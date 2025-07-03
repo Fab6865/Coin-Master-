@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Master Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Header avec stats */
+        .header {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2C3E50;
+            font-weight: bold;
+            font-size: 18px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+        }
+
+        .stat-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .coins-icon { background: #FFD700; }
+        .pins-icon { background: #FF6B6B; }
+        .shield-icon { background: #4ECDC4; }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background: none;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .tab.active {
+            background: rgba(255,255,255,0.2);
+            border-bottom-color: #FFD700;
+        }
+
+        /* Conteneur principal */
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: calc(100vh - 120px);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* MACHINE À SOUS */
+        .slot-machine {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            width: 350px;
+            height: 200px;
+            margin: 0 auto 30px;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slot-reel {
+            width: 80px;
+            height: 120px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .reel-container {
+            position: absolute;
+            width: 100%;
+            transition: transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reel-symbol {
+            width: 80px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .slot-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 260px;
+            height: 50px;
+            border: 4px solid #FF6B6B;
+            border-radius: 10px;
+            pointer-events: none;
+            z-index: 10;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255,107,107,0.2) 20%, 
+                rgba(255,107,107,0.2) 80%, 
+                transparent 100%);
+        }
+
+        .slot-machine.spinning .reel-container {
+            animation: slotSpin 0.1s linear infinite;
+        }
+
+        @keyframes slotSpin {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-40px); }
+        }
+
+        .win-highlight {
+            animation: winGlow 1s ease-in-out 3;
+        }
+
+        @keyframes winGlow {
+            0%, 100% { box-shadow: inset 0 4px 8px rgba(0,0,0,0.3); }
+            50% { box-shadow: inset 0 4px 8px rgba(255,215,0,0.8), 0 0 20px rgba(255,215,0,0.6); }
+        }
+
+        .spin-button {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .spin-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(255, 107, 107, 0.6);
+        }
+
+        .spin-button:disabled {
+            background: #BDC3C7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .timer-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .timer-icon {
+            font-size: 32px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .timer-text {
+            font-size: 18px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .countdown {
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        .recent-attacks {
+            background: rgba(231, 76, 60, 0.15);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .recent-attacks h3 {
+            color: white;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .attack-log {
+            max-height: 120px;
+            overflow-y: auto;
+            color: white;
+            font-size: 14px;
+        }
+
+        .attack-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        /* PAGE ATTAQUES */
+        .attacks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .player-card {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-family: inherit;
+        }
+
+        .player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .player-stats {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* PAGE AMELIORATIONS */
+        .buildings-section {
+            background: rgba(52, 152, 219, 0.15);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .buildings-section h3 {
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .building-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .building {
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .building:hover {
+            transform: translateY(-3px);
+        }
+
+        .building-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .building-name {
+            font-weight: bold;
+            color: #2C3E50;
+            margin-bottom: 5px;
+        }
+
+        .building-level {
+            color: #7F8C8D;
+            font-size: 12px;
+        }
+
+        .upgrade-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .upgrade-card {
+            background: linear-gradient(45deg, #4ECDC4, #44A08D);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-family: inherit;
+        }
+
+        .upgrade-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .upgrade-card.disabled {
+            background: #BDC3C7;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Contrôles en bas */
+        .bottom-controls {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-status {
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        /* Messages */
+        .message {
+            background: rgba(46, 204, 113, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        /* Modales */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease-out;
+            color: white;
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: -20px;
+        }
+
+        .close:hover {
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Protection info */
+        .protection-info {
+            background: rgba(52, 152, 219, 0.15);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .protection-info h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .protection-info p {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .wheel-container {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .header {
+                padding: 10px;
+                gap: 15px;
+            }
+            
+            .stat {
+                font-size: 16px;
+            }
+            
+            .spin-button {
+                padding: 15px 35px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header avec stats -->
+    <div class="header">
+        <div class="stat">
+            <div class="stat-icon coins-icon">💰</div>
+            <span id="coins">1000</span>
+        </div>
+        <div class="stat">
+            <div class="stat-icon pins-icon">🎯</div>
+            <span id="pins">5</span>
+        </div>
+        <div class="stat">
+            <div class="stat-icon shield-icon">🛡️</div>
+            <span id="shields">3</span><span style="font-size: 12px; opacity: 0.7;">/10</span>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-tabs">
+        <button class="tab active" onclick="showTab('home')">🎮 Accueil</button>
+        <button class="tab" onclick="showTab('attacks')">⚔️ Attaques</button>
+        <button class="tab" onclick="showTab('buildings')">🏗️ Améliorations</button>
+        <button class="tab" onclick="showTab('protection')">🛡️ Protection</button>
+    </div>
+
+    <div class="main-container">
+        <!-- Message -->
+        <div class="message" id="message"></div>
+
+        <!-- PAGE ACCUEIL -->
+        <div id="home" class="tab-content active">
+            <div class="wheel-section">
+                <div class="slot-machine" id="slotMachine">
+                    <div class="slot-reel">
+                        <div class="reel-container" id="reel1">
+                            <!-- Généré dynamiquement -->
+                        </div>
+                    </div>
+                    <div class="slot-reel">
+                        <div class="reel-container" id="reel2">
+                            <!-- Généré dynamiquement -->
+                        </div>
+                    </div>
+                    <div class="slot-reel">
+                        <div class="reel-container" id="reel3">
+                            <!-- Généré dynamiquement -->
+                        </div>
+                    </div>
+                    <div class="slot-frame"></div>
+                </div>
+
+                <button class="spin-button" id="spinBtn">SPIN (1 Pin)</button>
+            </div>
+
+            ⏰ Prochain Pin dans: <span style="color: #FFD700; font-weight: bold;" id="countdown">--:--</span>
+            
+            <br><br>
+
+            <div class="recent-attacks">
+                <h3>📋 Attaques Récentes</h3>
+                <div class="attack-log" id="attackLog">
+                    <div class="attack-item">Aucune attaque récente</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE ATTAQUES -->
+        <div id="attacks" class="tab-content">
+            <h2 style="color: white; text-align: center; margin-bottom: 20px;">⚔️ Choisir un Adversaire</h2>
+            <div class="attacks-grid" id="attacksGrid">
+                <!-- Généré dynamiquement -->
+            </div>
+            <div style="text-align: center;">
+                <button class="control-btn" onclick="generateNewTargets()">🔄 Nouveaux Adversaires</button>
+            </div>
+        </div>
+
+        <!-- PAGE AMELIORATIONS -->
+        <div id="buildings" class="tab-content">
+            <div class="buildings-section">
+                <h3>🏘️ Village (Niveau <span id="villageLevel">1</span>)</h3>
+                <div class="building-grid">
+                    <div class="building">
+                        <div class="building-icon">🏠</div>
+                        <div class="building-name">Maison</div>
+                        <div class="building-level">Niv. <span id="house-level">1</span></div>
+                    </div>
+                    <div class="building">
+                        <div class="building-icon">🏪</div>
+                        <div class="building-name">Magasin</div>
+                        <div class="building-level">Niv. <span id="shop-level">1</span></div>
+                    </div>
+                    <div class="building">
+                        <div class="building-icon">🏛️</div>
+                        <div class="building-name">Temple</div>
+                        <div class="building-level">Niv. <span id="temple-level">1</span></div>
+                    </div>
+                    <div class="building">
+                        <div class="building-icon">🏰</div>
+                        <div class="building-name">Château</div>
+                        <div class="building-level">Niv. <span id="castle-level">1</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="color: white; text-align: center; margin-bottom: 15px;">🔨 Améliorer un Bâtiment</h3>
+            <div class="upgrade-options" id="upgradeOptions">
+                <!-- Généré dynamiquement -->
+            </div>
+        </div>
+
+        <!-- PAGE PROTECTION -->
+        <div id="protection" class="tab-content">
+            <div class="protection-info">
+                <h3>🛡️ Système de Protection</h3>
+                <p>• <strong>Vos boucliers</strong> vous protègent des attaques d'autres joueurs</p>
+                <p>• <strong>1 bouclier = 1 attaque bloquée</strong> (puis le bouclier disparaît)</p>
+                <p>• <strong>Limite :</strong> Maximum 10 boucliers (150 coins = 2 boucliers)</p>
+                <p>• <strong>Attaques réalistes :</strong> Continuent même hors ligne (max 5 par jour)</p>
+                <p>• <strong>Simulation hors ligne :</strong> Pins régénérés ET attaques subies pendant l'absence</p>
+                <p>• <strong>Rapport détaillé :</strong> Résumé de ce qui s'est passé pendant votre absence</p>
+                <p>• <strong>Sans bouclier :</strong> Vous perdez 15-35% de vos coins par attaque</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="control-btn" id="buyShieldBtn" onclick="game.buyShield()">
+                    🛡️ Acheter Boucliers (150 💰)
+                </button>
+            </div>
+        </div>
+
+        <!-- Contrôles en bas -->
+        <div class="bottom-controls">
+            <div class="controls-grid">
+                <button class="control-btn" id="audioToggle">🔊 Sons</button>
+                <button class="control-btn" onclick="game.exportSave()">📤 Export</button>
+                <button class="control-btn" onclick="document.getElementById('importFile').click()">📥 Import</button>
+                <button class="control-btn" onclick="game.manualSave()">💾 Sauver</button>
+                <button class="control-btn" onclick="game.collectDailyBonus()">🎁 Bonus</button>
+            </div>
+            <input type="file" id="importFile" accept=".json" class="hidden">
+            <div class="control-status" id="saveStatus">💾 Initialisation...</div>
+        </div>
+    </div>
+
+    <script>
+        class CoinMasterGame {
+            constructor() {
+                this.gameState = {
+                    coins: 1000,
+                    pins: 5,
+                    shields: 3,
+                    buildings: {
+                        house: 1,
+                        shop: 1,
+                        temple: 1,
+                        castle: 1
+                    },
+                    villageLevel: 1,
+                    lastPinTime: Date.now(),
+                    lastBonusTime: 0,
+                    multiplier: 1
+                };
+
+                this.audioEnabled = true;
+                this.audioContext = null;
+                this.attackLog = [];
+
+                // Machine à sous - Symboles et leurs récompenses
+                this.slotSymbols = [
+                    { symbol: '🍎', name: 'Pomme', type: 'coins', weight: 25 },
+                    { symbol: '🍓', name: 'Fraise', type: 'attack', weight: 15 },
+                    { symbol: '🍋', name: 'Citron', type: 'build', weight: 15 },
+                    { symbol: '🍊', name: 'Orange', type: 'raid', weight: 15 },
+                    { symbol: '🛡️', name: 'Bouclier', type: 'shield', weight: 12 },
+                    { symbol: '💎', name: 'Diamant', type: 'multiplier', weight: 10 },
+                    { symbol: '⭐', name: 'Étoile', type: 'jackpot', weight: 5 },
+                    { symbol: '🍇', name: 'Raisin', type: 'pins', weight: 3 }
+                ];
+
+                this.wheelSegments = [
+                    { type: 'coins', min: 100, max: 500 },
+                    { type: 'attack', value: 1 },
+                    { type: 'build', value: 1 },
+                    { type: 'shield', value: 1 },
+                    { type: 'multiplier', value: 2 },
+                    { type: 'raid', value: 1 },
+                    { type: 'bonus', min: 200, max: 800 },
+                    { type: 'bigMultiplier', value: 10 }
+                ];
+
+                this.playerNames = [
+                    'Alex_Warrior', 'Luna_Magic', 'Thor_Lightning', 'Ninja_Shadow', 'Fire_Dragon',
+                    'Ice_Queen', 'Storm_Knight', 'Golden_Eagle', 'Silver_Wolf', 'Dark_Mage',
+                    'Swift_Arrow', 'Iron_Fist', 'Crystal_Heart', 'Flame_Rider', 'Ocean_Master',
+                    'Sky_Walker', 'Earth_Shaker', 'Wind_Dancer', 'Star_Hunter', 'Moon_Guardian'
+                ];
+
+                this.buildingNames = {
+                    house: { name: 'Maison', icon: '🏠', baseCost: 100 },
+                    shop: { name: 'Magasin', icon: '🏪', baseCost: 150 },
+                    temple: { name: 'Temple', icon: '🏛️', baseCost: 200 },
+                    castle: { name: 'Château', icon: '🏰', baseCost: 300 }
+                };
+
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.initAudio();
+                this.initSlotMachine();
+                this.generateAttackTargets();
+                this.generateUpgradeOptions();
+                this.updateDisplay();
+                
+                setTimeout(() => {
+                    this.loadGame();
+                    this.updateDisplay();
+                    this.updateAudioDisplay();
+                }, 100);
+
+                // Timers
+                setInterval(() => this.updateTimer(), 1000);
+                setInterval(() => this.regeneratePin(), 3600000);
+                // Attaques très rares - 5 par jour maximum comme demandé
+                setInterval(() => this.randomPlayerAttack(), 18000000); // 5 heures (environ 5 attaques/jour)
+                setInterval(() => this.richTargetAttack(), 43200000);   // 12 heures (environ 2 attaques/jour)
+                setInterval(() => this.saveGame(), 30000);
+
+                // Sauvegarde avant fermeture
+                window.addEventListener('beforeunload', () => this.saveGame());
+                window.addEventListener('blur', () => this.saveGame());
+            }
+
+            setupEventListeners() {
+                const spinBtn = document.getElementById('spinBtn');
+                const audioToggle = document.getElementById('audioToggle');
+                const importFile = document.getElementById('importFile');
+
+                if (spinBtn) spinBtn.addEventListener('click', () => this.spin());
+                if (audioToggle) audioToggle.addEventListener('click', () => this.toggleAudio());
+                if (importFile) importFile.addEventListener('change', (e) => this.importSave(e));
+            }
+
+            // === AUDIO ===
+            initAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    this.audioEnabled = false;
+                }
+                this.updateAudioDisplay();
+            }
+
+            playSound(frequency, duration, type = 'sine', volume = 0.1) {
+                if (!this.audioEnabled || !this.audioContext) return;
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    oscillator.frequency.value = frequency;
+                    oscillator.type = type;
+                    gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + duration);
+                } catch (e) {}
+            }
+
+            playSpinSound() {
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(() => this.playSound(200 + i * 25, 0.1, 'sawtooth', 0.05), i * 150);
+                }
+            }
+
+            playWinSound() {
+                const notes = [523, 659, 784, 1047, 1319];
+                notes.forEach((note, index) => {
+                    setTimeout(() => this.playSound(note, 0.4, 'square', 0.08), index * 150);
+                });
+            }
+
+            playAttackSound() {
+                this.playSound(150, 0.2, 'sawtooth', 0.08);
+                setTimeout(() => this.playSound(100, 0.3, 'triangle', 0.06), 100);
+            }
+
+            playCoinSound() {
+                this.playSound(800, 0.2, 'sine', 0.06);
+                setTimeout(() => this.playSound(1000, 0.15, 'sine', 0.05), 100);
+            }
+
+            playShieldSound() {
+                this.playSound(400, 0.3, 'sine', 0.06);
+                setTimeout(() => this.playSound(600, 0.2, 'sine', 0.05), 150);
+            }
+
+            playErrorSound() {
+                this.playSound(300, 0.15, 'sawtooth', 0.05);
+                setTimeout(() => this.playSound(200, 0.2, 'sawtooth', 0.04), 100);
+            }
+
+            toggleAudio() {
+                this.audioEnabled = !this.audioEnabled;
+                this.updateAudioDisplay();
+                if (this.audioEnabled) this.playCoinSound();
+            }
+
+            updateAudioDisplay() {
+                const toggle = document.getElementById('audioToggle');
+                if (toggle) {
+                    toggle.textContent = this.audioEnabled ? '🔊 Sons' : '🔇 Muet';
+                }
+            }
+
+            // === NAVIGATION ===
+            showTab(tabName) {
+                // Cacher tous les contenus
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+
+                // Afficher le contenu sélectionné
+                const targetTab = document.getElementById(tabName);
+                const targetButton = event.target;
+                
+                if (targetTab) targetTab.classList.add('active');
+                if (targetButton) targetButton.classList.add('active');
+
+                // Régénérer le contenu si nécessaire
+                if (tabName === 'attacks') this.generateAttackTargets();
+                if (tabName === 'buildings') this.generateUpgradeOptions();
+
+                this.playSound(600, 0.1, 'sine', 0.03);
+            }
+
+            // === MACHINE À SOUS ===
+            initSlotMachine() {
+                this.generateReels();
+            }
+
+            generateReels() {
+                for (let i = 1; i <= 3; i++) {
+                    const reel = document.getElementById(`reel${i}`);
+                    if (reel) {
+                        reel.innerHTML = '';
+                        
+                        // Créer un rouleau avec plusieurs répétitions des symboles
+                        const reelSymbols = [];
+                        this.slotSymbols.forEach(symbolData => {
+                            // Ajouter le symbole selon son poids
+                            for (let w = 0; w < symbolData.weight; w++) {
+                                reelSymbols.push(symbolData.symbol);
+                            }
+                        });
+                        
+                        // Mélanger et répéter pour un rouleau plus long
+                        for (let repeat = 0; repeat < 5; repeat++) {
+                            const shuffled = [...reelSymbols].sort(() => Math.random() - 0.5);
+                            shuffled.forEach(symbol => {
+                                const symbolEl = document.createElement('div');
+                                symbolEl.className = 'reel-symbol';
+                                symbolEl.textContent = symbol;
+                                reel.appendChild(symbolEl);
+                            });
+                        }
+                    }
+                }
+            }
+
+            spin() {
+                if (this.gameState.pins <= 0) return;
+
+                this.gameState.pins--;
+                const slotMachine = document.getElementById('slotMachine');
+                const spinBtn = document.getElementById('spinBtn');
+                
+                if (!slotMachine || !spinBtn) return;
+                
+                spinBtn.disabled = true;
+                this.playSpinSound();
+                
+                // Démarrer l'animation
+                slotMachine.classList.add('spinning');
+                
+                // Arrêter les rouleaux un par un avec des délais
+                const results = [];
+                
+                setTimeout(() => {
+                    this.stopReel(1);
+                    results[0] = this.getReelResult(1);
+                }, 800);
+                
+                setTimeout(() => {
+                    this.stopReel(2);
+                    results[1] = this.getReelResult(2);
+                }, 1200);
+                
+                setTimeout(() => {
+                    this.stopReel(3);
+                    results[2] = this.getReelResult(3);
+                    slotMachine.classList.remove('spinning');
+                    
+                    // Calculer et afficher le résultat
+                    setTimeout(() => {
+                        this.handleSlotResult(results);
+                        if (spinBtn) spinBtn.disabled = this.gameState.pins <= 0;
+                    }, 500);
+                }, 1600);
+                
+                this.updateDisplay();
+            }
+
+            stopReel(reelNumber) {
+                const reel = document.getElementById(`reel${reelNumber}`);
+                if (!reel) return;
+                
+                // Choisir un symbole aléatoire basé sur les poids
+                const randomSymbol = this.getRandomSymbol();
+                
+                // Trouver la position de ce symbole dans le rouleau
+                const symbols = reel.querySelectorAll('.reel-symbol');
+                let targetIndex = -1;
+                
+                for (let i = 0; i < symbols.length; i++) {
+                    if (symbols[i].textContent === randomSymbol.symbol) {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+                
+                if (targetIndex !== -1) {
+                    // Calculer la position pour centrer le symbole
+                    const offset = targetIndex * 40 - 40; // 40px par symbole, centrer sur le 2ème
+                    reel.style.transform = `translateY(-${offset}px)`;
+                    reel.style.transition = 'transform 0.5s ease-out';
+                }
+            }
+
+            getRandomSymbol() {
+                const totalWeight = this.slotSymbols.reduce((sum, s) => sum + s.weight, 0);
+                let random = Math.random() * totalWeight;
+                
+                for (const symbol of this.slotSymbols) {
+                    random -= symbol.weight;
+                    if (random <= 0) {
+                        return symbol;
+                    }
+                }
+                
+                return this.slotSymbols[0]; // Fallback
+            }
+
+            getReelResult(reelNumber) {
+                const reel = document.getElementById(`reel${reelNumber}`);
+                if (!reel) return null;
+                
+                // Trouver le symbole visible au centre
+                const transform = reel.style.transform;
+                const match = transform.match(/translateY\(-?(\d+)px\)/);
+                
+                if (match) {
+                    const offset = parseInt(match[1]);
+                    const symbolIndex = Math.round((offset + 40) / 40); // +40 pour centrer
+                    const symbols = reel.querySelectorAll('.reel-symbol');
+                    
+                    if (symbols[symbolIndex]) {
+                        const symbolText = symbols[symbolIndex].textContent;
+                        return this.slotSymbols.find(s => s.symbol === symbolText);
+                    }
+                }
+                
+                return this.slotSymbols[0]; // Fallback
+            }
+
+            handleSlotResult(results) {
+                const [symbol1, symbol2, symbol3] = results;
+                let message = '';
+                let isWin = false;
+                
+                // Vérifier les combinaisons
+                if (symbol1?.symbol === symbol2?.symbol && symbol2?.symbol === symbol3?.symbol) {
+                    // TROIS IDENTIQUES = JACKPOT !
+                    isWin = true;
+                    this.highlightWin();
+                    message = this.handleJackpot(symbol1);
+                } else if (symbol1?.symbol === symbol2?.symbol || symbol2?.symbol === symbol3?.symbol || symbol1?.symbol === symbol3?.symbol) {
+                    // DEUX IDENTIQUES = GAIN MOYEN
+                    isWin = true;
+                    const matchingSymbol = symbol1?.symbol === symbol2?.symbol ? symbol1 : 
+                                         symbol2?.symbol === symbol3?.symbol ? symbol2 : symbol1;
+                    message = this.handlePairWin(matchingSymbol);
+                } else {
+                    // AUCUNE COMBINAISON = PETIT GAIN DE CONSOLATION
+                    const consolationCoins = Math.floor(50 + Math.random() * 50);
+                    this.gameState.coins += consolationCoins;
+                    message = `🎰 Consolation: +${consolationCoins} Coins`;
+                    this.playCoinSound();
+                }
+                
+                this.updateDisplay();
+                this.showMessage(message, isWin ? 'success' : 'info');
+                this.saveGame();
+            }
+
+            handleJackpot(symbolData) {
+                switch(symbolData.type) {
+                    case 'coins':
+                        const jackpotCoins = Math.floor((800 + Math.random() * 400) * this.gameState.multiplier);
+                        this.gameState.coins += jackpotCoins;
+                        this.playWinSound();
+                        return `🍎🍎🍎 JACKPOT ! +${jackpotCoins} Coins !`;
+                        
+                    case 'attack':
+                        this.performWheelAttack();
+                        this.playWinSound();
+                        return `🍓🍓🍓 TRIPLE ATTAQUE !`;
+                        
+                    case 'build':
+                        this.performWheelBuild();
+                        this.playWinSound();
+                        return `🍋🍋🍋 TRIPLE CONSTRUCTION !`;
+                        
+                    case 'shield':
+                        const maxShields = 10;
+                        const shieldsToAdd = Math.min(3, maxShields - this.gameState.shields);
+                        this.gameState.shields += shieldsToAdd;
+                        this.playShieldSound();
+                        return `🛡️🛡️🛡️ TRIPLE PROTECTION ! +${shieldsToAdd} Boucliers !`;
+                        
+                    case 'multiplier':
+                        this.gameState.multiplier = 5;
+                        this.playWinSound();
+                        setTimeout(() => {
+                            this.gameState.multiplier = 1;
+                            this.showMessage('💎 Multiplicateur x5 expiré', 'info');
+                        }, 45000);
+                        return `💎💎💎 SUPER MULTIPLICATEUR x5 (45s) !`;
+                        
+                    case 'raid':
+                        const superRaid = Math.floor((500 + Math.random() * 500) * this.gameState.multiplier);
+                        this.gameState.coins += superRaid;
+                        this.playWinSound();
+                        return `🍊🍊🍊 SUPER RAID ! +${superRaid} Coins !`;
+                        
+                    case 'jackpot':
+                        const megaJackpot = Math.floor((1500 + Math.random() * 1000) * this.gameState.multiplier);
+                        this.gameState.coins += megaJackpot;
+                        this.playWinSound();
+                        return `⭐⭐⭐ MEGA JACKPOT ! +${megaJackpot} Coins !`;
+                        
+                    case 'pins':
+                        const pinsToAdd = Math.min(3, 5 - this.gameState.pins);
+                        this.gameState.pins += pinsToAdd;
+                        this.playCoinSound();
+                        return `🍇🍇🍇 TRIPLE PINS ! +${pinsToAdd} Pins !`;
+                        
+                    default:
+                        return `🎰 Jackpot inconnu !`;
+                }
+            }
+
+            handlePairWin(symbolData) {
+                switch(symbolData.type) {
+                    case 'coins':
+                        const pairCoins = Math.floor((200 + Math.random() * 200) * this.gameState.multiplier);
+                        this.gameState.coins += pairCoins;
+                        this.playCoinSound();
+                        return `🍎🍎 Paire de Pommes ! +${pairCoins} Coins !`;
+                        
+                    case 'attack':
+                        this.performWheelAttack();
+                        return `🍓🍓 Paire d'Attaque !`;
+                        
+                    case 'build':
+                        this.performWheelBuild();
+                        return `🍋🍋 Paire de Construction !`;
+                        
+                    case 'shield':
+                        const maxShields = 10;
+                        const shieldsToAdd = Math.min(1, maxShields - this.gameState.shields);
+                        this.gameState.shields += shieldsToAdd;
+                        this.playShieldSound();
+                        return `🛡️🛡️ Paire de Boucliers ! +${shieldsToAdd} Bouclier !`;
+                        
+                    case 'multiplier':
+                        this.gameState.multiplier = 2;
+                        this.playWinSound();
+                        setTimeout(() => {
+                            this.gameState.multiplier = 1;
+                            this.showMessage('💎 Multiplicateur x2 expiré', 'info');
+                        }, 30000);
+                        return `💎💎 Multiplicateur x2 (30s) !`;
+                        
+                    case 'raid':
+                        const raidReward = Math.floor((200 + Math.random() * 200) * this.gameState.multiplier);
+                        this.gameState.coins += raidReward;
+                        this.playCoinSound();
+                        return `🍊🍊 Paire de Raid ! +${raidReward} Coins !`;
+                        
+                    case 'jackpot':
+                        const smallJackpot = Math.floor((400 + Math.random() * 300) * this.gameState.multiplier);
+                        this.gameState.coins += smallJackpot;
+                        this.playWinSound();
+                        return `⭐⭐ Petit Jackpot ! +${smallJackpot} Coins !`;
+                        
+                    case 'pins':
+                        const pinsToAdd = Math.min(1, 5 - this.gameState.pins);
+                        this.gameState.pins += pinsToAdd;
+                        this.playCoinSound();
+                        return `🍇🍇 Paire de Pins ! +${pinsToAdd} Pin !`;
+                        
+                    default:
+                        return `🎰 Paire inconnue !`;
+                }
+            }
+
+            highlightWin() {
+                const reels = document.querySelectorAll('.slot-reel');
+                reels.forEach(reel => {
+                    reel.classList.add('win-highlight');
+                    setTimeout(() => {
+                        reel.classList.remove('win-highlight');
+                    }, 3000);
+                });
+            }
+
+            performWheelAttack() {
+                const damage = Math.floor(Math.random() * 100) + 50;
+                const enemy = this.getRandomEnemy();
+                if (damage >= enemy.strength) {
+                    const reward = Math.floor(enemy.reward * this.gameState.multiplier);
+                    this.gameState.coins += reward;
+                    this.playWinSound();
+                    this.showMessage(`⚔️ Victoire ! +${reward} Coins !`, 'success');
+                } else {
+                    this.playAttackSound();
+                    this.showMessage(`⚔️ Attaque faible ! (${damage}/${enemy.strength})`, 'warning');
+                }
+                this.updateDisplay();
+                this.saveGame();
+            }
+
+            performWheelBuild() {
+                const cost = this.getRandomUpgradeCost();
+                if (this.gameState.coins >= cost) {
+                    this.gameState.coins -= cost;
+                    this.upgradeRandomBuilding();
+                    this.playCoinSound();
+                    this.showMessage(`🏗️ Construction ! (-${cost} Coins)`, 'success');
+                } else {
+                    this.playErrorSound();
+                    this.showMessage(`🏗️ Pas assez de Coins ! (${cost} requis)`, 'error');
+                }
+                this.updateDisplay();
+                this.saveGame();
+            }
+
+            getRandomEnemy() {
+                const enemies = [
+                    { name: 'Robot Garde', strength: 50, reward: 200 },
+                    { name: 'Dragon Mécanique', strength: 120, reward: 500 },
+                    { name: 'Sorcier Noir', strength: 200, reward: 800 },
+                    { name: 'Titan de Fer', strength: 350, reward: 1200 }
+                ];
+                return enemies[Math.floor(Math.random() * enemies.length)];
+            }
+
+            // === ATTAQUES ===
+            generateAttackTargets() {
+                const grid = document.getElementById('attacksGrid');
+                if (!grid) return;
+                
+                grid.innerHTML = '';
+                
+                for (let i = 0; i < 5; i++) {
+                    const randomName = this.playerNames[Math.floor(Math.random() * this.playerNames.length)];
+                    const level = Math.floor(Math.random() * 20) + 1;
+                    const coins = Math.floor(Math.random() * 2000) + 500;
+                    const shields = Math.floor(Math.random() * 5);
+                    
+                    const card = document.createElement('button');
+                    card.className = 'player-card';
+                    card.innerHTML = `
+                        <div class="player-name">👤 ${randomName}</div>
+                        <div class="player-stats">
+                            🏆 Niveau ${level}<br>
+                            💰 ${coins} coins<br>
+                            🛡️ ${shields} boucliers
+                        </div>
+                    `;
+                    
+                    card.addEventListener('click', () => {
+                        this.attackPlayer(randomName, level, coins, shields);
+                    });
+                    
+                    grid.appendChild(card);
+                }
+            }
+
+            attackPlayer(playerName, level, playerCoins, shields) {
+                if (this.gameState.pins <= 0) {
+                    this.showMessage('❌ Pas assez de Pins !', 'error');
+                    return;
+                }
+
+                this.gameState.pins--;
+                
+                const playerStrength = level * 10 + Math.floor(Math.random() * 50);
+                const yourAttack = Math.floor(Math.random() * 150) + 75 + (this.gameState.villageLevel * 10);
+                
+                this.playAttackSound();
+                
+                setTimeout(() => {
+                    let result = '';
+                    if (shields > 0) {
+                        this.playShieldSound();
+                        result = `🛡️ ${playerName} était protégé ! Attaque bloquée.`;
+                        this.showMessage(result, 'warning');
+                    } else if (yourAttack >= playerStrength) {
+                        const stolenCoins = Math.floor(playerCoins * 0.3 * this.gameState.multiplier);
+                        this.gameState.coins += stolenCoins;
+                        this.playWinSound();
+                        result = `⚔️ VICTOIRE ! Vous volez ${stolenCoins} coins à ${playerName} !`;
+                        this.showMessage(result, 'success');
+                    } else {
+                        const damage = Math.floor(Math.random() * 50 + 25);
+                        this.playErrorSound();
+                        result = `⚔️ DÉFAITE contre ${playerName}... Vous perdez ${damage} coins !`;
+                        this.gameState.coins = Math.max(0, this.gameState.coins - damage);
+                        this.showMessage(result, 'error');
+                    }
+                    
+                    this.addToAttackLog(result);
+                    this.updateDisplay();
+                    this.saveGame();
+                }, 500);
+            }
+
+            // === AMELIORATIONS ===
+            generateUpgradeOptions() {
+                const container = document.getElementById('upgradeOptions');
+                if (!container) return;
+                
+                container.innerHTML = '';
+                
+                Object.keys(this.buildingNames).forEach(buildingKey => {
+                    const building = this.buildingNames[buildingKey];
+                    const currentLevel = this.gameState.buildings[buildingKey];
+                    const cost = this.getBuildingUpgradeCost(buildingKey);
+                    
+                    const card = document.createElement('button');
+                    card.className = this.gameState.coins >= cost ? 'upgrade-card' : 'upgrade-card disabled';
+                    card.innerHTML = `
+                        <div style="font-size: 30px; margin-bottom: 10px;">${building.icon}</div>
+                        <div style="font-weight: bold; margin-bottom: 5px;">${building.name}</div>
+                        <div style="font-size: 12px; margin-bottom: 5px;">Niveau ${currentLevel}</div>
+                        <div style="font-size: 14px;">${cost} 💰</div>
+                    `;
+                    
+                    if (this.gameState.coins >= cost) {
+                        card.addEventListener('click', () => {
+                            this.upgradeSpecificBuilding(buildingKey);
+                        });
+                    }
+                    
+                    container.appendChild(card);
+                });
+            }
+
+            upgradeSpecificBuilding(buildingKey) {
+                const cost = this.getBuildingUpgradeCost(buildingKey);
+                const buildingName = this.buildingNames[buildingKey].name;
+                
+                if (this.gameState.coins >= cost) {
+                    this.gameState.coins -= cost;
+                    this.gameState.buildings[buildingKey]++;
+                    
+                    const totalLevels = Object.values(this.gameState.buildings).reduce((a, b) => a + b, 0);
+                    this.gameState.villageLevel = Math.floor(totalLevels / 4);
+                    
+                    this.playCoinSound();
+                    this.showMessage(`🏗️ ${buildingName} amélioré ! (-${cost} Coins)`, 'success');
+                    this.generateUpgradeOptions(); // Regénérer les options
+                    this.updateDisplay();
+                    this.saveGame();
+                } else {
+                    this.playErrorSound();
+                    this.showMessage(`❌ Pas assez de Coins ! (${cost} requis)`, 'error');
+                }
+            }
+
+            getBuildingUpgradeCost(buildingKey) {
+                const building = this.buildingNames[buildingKey];
+                const currentLevel = this.gameState.buildings[buildingKey];
+                return Math.floor(building.baseCost * Math.pow(1.5, currentLevel - 1));
+            }
+
+            upgradeRandomBuilding() {
+                const buildings = Object.keys(this.gameState.buildings);
+                const randomBuilding = buildings[Math.floor(Math.random() * buildings.length)];
+                this.gameState.buildings[randomBuilding]++;
+                
+                const totalLevels = Object.values(this.gameState.buildings).reduce((a, b) => a + b, 0);
+                this.gameState.villageLevel = Math.floor(totalLevels / 4);
+            }
+
+            getRandomUpgradeCost() {
+                const totalLevels = Object.values(this.gameState.buildings).reduce((a, b) => a + b, 0);
+                return Math.floor(100 * Math.pow(1.5, totalLevels / 4));
+            }
+
+            // === PROTECTION ===
+            buyShield() {
+                const cost = 150;
+                const maxShields = 10;
+                
+                if (this.gameState.shields >= maxShields) {
+                    this.playErrorSound();
+                    this.showMessage(`🛡️ Maximum de boucliers atteint ! (${maxShields} max)`, 'warning');
+                    return;
+                }
+                
+                if (this.gameState.coins >= cost) {
+                    const shieldsToAdd = Math.min(2, maxShields - this.gameState.shields);
+                    this.gameState.coins -= cost;
+                    this.gameState.shields += shieldsToAdd;
+                    this.playShieldSound();
+                    this.showMessage(`🛡️ +${shieldsToAdd} Boucliers ! (-${cost} Coins)`, 'success');
+                    this.updateDisplay();
+                    this.saveGame();
+                } else {
+                    this.playErrorSound();
+                    this.showMessage(`❌ Pas assez de Coins ! (${cost} requis)`, 'error');
+                }
+            }
+
+            // === SYSTEME ===
+            updateDisplay() {
+                const coinsEl = document.getElementById('coins');
+                const pinsEl = document.getElementById('pins');
+                const shieldsEl = document.getElementById('shields');
+                const villageLevelEl = document.getElementById('villageLevel');
+                const spinBtn = document.getElementById('spinBtn');
+
+                if (coinsEl) coinsEl.textContent = this.gameState.coins || 0;
+                if (pinsEl) pinsEl.textContent = this.gameState.pins || 0;
+                if (shieldsEl) shieldsEl.textContent = this.gameState.shields || 0;
+                if (villageLevelEl) villageLevelEl.textContent = this.gameState.villageLevel || 1;
+
+                Object.keys(this.gameState.buildings || {}).forEach(building => {
+                    const element = document.getElementById(`${building}-level`);
+                    if (element) {
+                        element.textContent = this.gameState.buildings[building] || 1;
+                    }
+                });
+
+                if (spinBtn) spinBtn.disabled = (this.gameState.pins || 0) <= 0;
+            }
+
+            updateTimer() {
+                const now = Date.now();
+                const timeSinceLastPin = now - this.gameState.lastPinTime;
+                const timeUntilNextPin = 3600000 - (timeSinceLastPin % 3600000);
+                
+                const minutes = Math.floor(timeUntilNextPin / 60000);
+                const seconds = Math.floor((timeUntilNextPin % 60000) / 1000);
+                
+                const countdownEl = document.getElementById('countdown');
+                if (countdownEl) {
+                    countdownEl.textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }
+
+            regeneratePin() {
+                if (this.gameState.pins < 5) {
+                    this.gameState.pins++;
+                    this.gameState.lastPinTime = Date.now();
+                    this.updateDisplay();
+                    this.playCoinSound();
+                    this.showMessage('🎯 Nouveau Pin reçu !', 'success');
+                }
+            }
+
+            randomPlayerAttack() {
+                if (this.gameState.coins < 500) return;
+                
+                const attackerName = this.playerNames[Math.floor(Math.random() * this.playerNames.length)];
+                const attackerLevel = Math.floor(Math.random() * 15) + 5;
+                
+                let result = '';
+                if (this.gameState.shields > 0) {
+                    this.gameState.shields--;
+                    this.playShieldSound();
+                    result = `🛡️ ${attackerName} attaque bloquée ! Boucliers: ${this.gameState.shields}`;
+                    this.showMessage(result, 'info');
+                } else {
+                    const stolenCoins = Math.floor(this.gameState.coins * (0.15 + Math.random() * 0.1));
+                    this.gameState.coins = Math.max(0, this.gameState.coins - stolenCoins);
+                    this.playAttackSound();
+                    result = `💥 ${attackerName} vous vole ${stolenCoins} coins ! Achetez des boucliers !`;
+                    this.showMessage(result, 'error');
+                }
+                
+                this.addToAttackLog(result);
+                this.updateDisplay();
+                this.saveGame();
+            }
+
+            richTargetAttack() {
+                if (this.gameState.coins < 2000) return;
+                
+                const attackerName = this.playerNames[Math.floor(Math.random() * this.playerNames.length)];
+                const attackerLevel = Math.floor(Math.random() * 20) + 10;
+                
+                let result = '';
+                if (this.gameState.shields > 0) {
+                    this.gameState.shields--;
+                    this.playShieldSound();
+                    result = `🛡️ ATTAQUE MAJEURE bloquée ! ${attackerName} visait vos richesses !`;
+                    this.showMessage(result, 'warning');
+                } else {
+                    const stolenCoins = Math.floor(this.gameState.coins * (0.2 + Math.random() * 0.15));
+                    this.gameState.coins = Math.max(0, this.gameState.coins - stolenCoins);
+                    this.playAttackSound();
+                    result = `💥 ATTAQUE MAJEURE ! ${attackerName} vole ${stolenCoins} coins !`;
+                    this.showMessage(result, 'error');
+                }
+                
+                this.addToAttackLog(result);
+                this.updateDisplay();
+                this.saveGame();
+            }
+
+            addToAttackLog(message) {
+                this.attackLog.unshift(message);
+                if (this.attackLog.length > 5) this.attackLog.pop();
+                
+                const logEl = document.getElementById('attackLog');
+                if (logEl) {
+                    logEl.innerHTML = this.attackLog.length > 0 
+                        ? this.attackLog.map(msg => `<div class="attack-item">${msg}</div>`).join('')
+                        : '<div class="attack-item">Aucune attaque récente</div>';
+                }
+            }
+
+            collectDailyBonus() {
+                const now = Date.now();
+                const oneDayInMs = 24 * 60 * 60 * 1000;
+                
+                if (now - this.gameState.lastBonusTime >= oneDayInMs) {
+                    const dailyBonus = Math.floor(Math.random() * 2000 + 1000);
+                    this.gameState.coins += dailyBonus;
+                    this.gameState.pins += 3;
+                    this.gameState.lastBonusTime = now;
+                    this.playWinSound();
+                    this.showMessage(`🎁 BONUS QUOTIDIEN ! +${dailyBonus} Coins + 3 Pins !`, 'success');
+                    this.updateDisplay();
+                    this.saveGame();
+                } else {
+                    const timeLeft = oneDayInMs - (now - this.gameState.lastBonusTime);
+                    const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
+                    const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+                    this.playErrorSound();
+                    this.showMessage(`⏰ Bonus disponible dans ${hoursLeft}h ${minutesLeft}m`, 'info');
+                }
+            }
+
+            showMessage(text, type = 'info') {
+                const messageEl = document.getElementById('message');
+                if (!messageEl) return;
+                
+                messageEl.textContent = text;
+                messageEl.style.display = 'block';
+                
+                switch(type) {
+                    case 'success':
+                        messageEl.style.background = 'rgba(46, 204, 113, 0.9)';
+                        break;
+                    case 'error':
+                        messageEl.style.background = 'rgba(231, 76, 60, 0.9)';
+                        break;
+                    case 'warning':
+                        messageEl.style.background = 'rgba(243, 156, 18, 0.9)';
+                        break;
+                    default:
+                        messageEl.style.background = 'rgba(52, 152, 219, 0.9)';
+                }
+                
+                setTimeout(() => {
+                    if (messageEl) messageEl.style.display = 'none';
+                }, 3000);
+            }
+
+            // === SAUVEGARDE ===
+            saveGame() {
+                try {
+                    const saveData = {
+                        gameState: this.gameState,
+                        audioEnabled: this.audioEnabled,
+                        attackLog: this.attackLog,
+                        saveTime: Date.now(),
+                        version: '2.0'
+                    };
+                    
+                    if (typeof localStorage !== 'undefined' && localStorage) {
+                        localStorage.setItem('coinMasterSave', JSON.stringify(saveData));
+                        this.updateSaveStatus('✅ Sauvé automatiquement');
+                    }
+                } catch (e) {
+                    this.updateSaveStatus('❌ Erreur de sauvegarde');
+                }
+            }
+
+            loadGame() {
+                try {
+                    if (typeof localStorage !== 'undefined' && localStorage) {
+                        const saveData = localStorage.getItem('coinMasterSave');
+                        if (saveData && saveData !== 'null') {
+                            const parsed = JSON.parse(saveData);
+                            if (parsed.gameState && parsed.version) {
+                                this.gameState = { ...this.gameState, ...parsed.gameState };
+                                this.audioEnabled = parsed.audioEnabled ?? true;
+                                this.attackLog = parsed.attackLog || [];
+                                
+                                // === SIMULATION DU TEMPS ÉCOULÉ HORS LIGNE ===
+                                this.simulateOfflineTime(parsed.saveTime);
+                                
+                                this.updateSaveStatus('✅ Partie chargée');
+                                if (this.audioEnabled) {
+                                    setTimeout(() => this.playWinSound(), 500);
+                                }
+                                this.addToAttackLog(''); // Refresh attack log display
+                                return true;
+                            }
+                        }
+                    }
+                    this.updateSaveStatus('💾 Nouvelle partie');
+                    return false;
+                } catch (e) {
+                    this.updateSaveStatus('❌ Erreur de chargement');
+                    return false;
+                }
+            }
+
+            simulateOfflineTime(lastSaveTime) {
+                const now = Date.now();
+                const timeOffline = now - (lastSaveTime || now);
+                
+                // Limiter la simulation à 7 jours maximum pour éviter les abus
+                const maxSimulation = 7 * 24 * 60 * 60 * 1000; // 7 jours
+                const actualTimeOffline = Math.min(timeOffline, maxSimulation);
+                
+                // Pas de simulation si moins de 30 minutes hors ligne
+                if (actualTimeOffline < 30 * 60 * 1000) return;
+                
+                const hoursOffline = actualTimeOffline / (60 * 60 * 1000);
+                let simulationReport = [];
+                
+                // === SIMULATION DES PINS ===
+                const pinsEarned = Math.min(Math.floor(hoursOffline), 5 - this.gameState.pins);
+                if (pinsEarned > 0) {
+                    this.gameState.pins = Math.min(this.gameState.pins + pinsEarned, 5);
+                    simulationReport.push(`🎯 +${pinsEarned} pins régénérés`);
+                }
+                
+                // === SIMULATION DES ATTAQUES ===
+                let totalAttacks = 0;
+                let totalDamage = 0;
+                let shieldsUsed = 0;
+                
+                // Attaques normales (toutes les 5h si +500 coins)
+                if (this.gameState.coins >= 500) {
+                    const normalAttacks = Math.floor(hoursOffline / 5);
+                    totalAttacks += normalAttacks;
+                }
+                
+                // Attaques de haut niveau (toutes les 12h si +2000 coins)
+                if (this.gameState.coins >= 2000) {
+                    const richAttacks = Math.floor(hoursOffline / 12);
+                    totalAttacks += richAttacks;
+                }
+                
+                // Appliquer les attaques
+                for (let i = 0; i < totalAttacks; i++) {
+                    const attackerName = this.playerNames[Math.floor(Math.random() * this.playerNames.length)];
+                    
+                    if (this.gameState.shields > 0) {
+                        // Bouclier absorbe l'attaque
+                        this.gameState.shields--;
+                        shieldsUsed++;
+                        simulationReport.push(`🛡️ ${attackerName} bloqué par un bouclier`);
+                    } else {
+                        // Pas de bouclier, subir des dégâts
+                        const damage = Math.floor(this.gameState.coins * (0.15 + Math.random() * 0.1));
+                        this.gameState.coins = Math.max(0, this.gameState.coins - damage);
+                        totalDamage += damage;
+                        simulationReport.push(`💥 ${attackerName} vous vole ${damage} coins`);
+                    }
+                }
+                
+                // === AFFICHAGE DU RÉSUMÉ ===
+                if (simulationReport.length > 0) {
+                    const offlineHours = Math.floor(hoursOffline);
+                    const offlineMinutes = Math.floor((hoursOffline % 1) * 60);
+                    
+                    let summary = `⏰ RAPPORT HORS LIGNE (${offlineHours}h${offlineMinutes}m)\n\n`;
+                    summary += simulationReport.join('\n');
+                    
+                    if (totalDamage > 0) {
+                        summary += `\n\n💸 Total perdu: ${totalDamage} coins`;
+                    }
+                    if (shieldsUsed > 0) {
+                        summary += `\n🛡️ Boucliers utilisés: ${shieldsUsed}`;
+                    }
+                    
+                    // Afficher avec un délai pour que l'interface soit prête
+                    setTimeout(() => {
+                        this.showOfflineReport(summary);
+                    }, 1000);
+                }
+                
+                // Mettre à jour les temps de référence
+                this.gameState.lastPinTime = now;
+            }
+
+            showOfflineReport(summary) {
+                // Créer une modal pour le rapport hors ligne
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    z-index: 2000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                
+                const content = document.createElement('div');
+                content.style.cssText = `
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 30px;
+                    border-radius: 20px;
+                    color: white;
+                    max-width: 500px;
+                    text-align: center;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+                `;
+                
+                content.innerHTML = `
+                    <h2 style="margin-bottom: 20px;">📋 Pendant votre absence</h2>
+                    <div style="white-space: pre-line; text-align: left; margin-bottom: 20px;">${summary}</div>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: #FF6B6B; color: white; border: none; padding: 10px 20px; 
+                                   border-radius: 10px; font-weight: bold; cursor: pointer;">
+                        OK
+                    </button>
+                `;
+                
+                modal.appendChild(content);
+                document.body.appendChild(modal);
+                
+                // Son d'information
+                this.playSound(600, 0.3, 'sine', 0.08);
+            }
+
+            manualSave() {
+                this.saveGame();
+                this.playCoinSound();
+                this.showMessage('💾 Partie sauvegardée manuellement !', 'success');
+                this.updateSaveStatus('✅ Sauvegarde manuelle réussie');
+            }
+
+            exportSave() {
+                try {
+                    const saveData = {
+                        gameState: this.gameState,
+                        audioEnabled: this.audioEnabled,
+                        attackLog: this.attackLog,
+                        saveTime: Date.now(),
+                        version: '2.0'
+                    };
+
+                    const dataStr = JSON.stringify(saveData, null, 2);
+                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                    const exportFileDefaultName = `coin_master_save_${new Date().toISOString().slice(0,10)}.json`;
+
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+
+                    this.playWinSound();
+                    this.showMessage('📤 Sauvegarde exportée !', 'success');
+                } catch (e) {
+                    this.playErrorSound();
+                    this.showMessage('❌ Erreur lors de l\'export', 'error');
+                }
+            }
+
+            importSave(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const saveData = JSON.parse(e.target.result);
+                        
+                        if (saveData.version && saveData.gameState) {
+                            this.gameState = { ...this.gameState, ...saveData.gameState };
+                            this.audioEnabled = saveData.audioEnabled ?? true;
+                            this.attackLog = saveData.attackLog || [];
+                            this.updateDisplay();
+                            this.updateAudioDisplay();
+                            this.addToAttackLog(''); // Refresh attack log
+                            this.playWinSound();
+                            this.showMessage('📥 Sauvegarde importée !', 'success');
+                            this.updateSaveStatus('✅ Importation réussie');
+                        } else {
+                            this.playErrorSound();
+                            this.showMessage('❌ Fichier invalide', 'error');
+                        }
+                    } catch (error) {
+                        this.playErrorSound();
+                        this.showMessage('❌ Erreur de chargement', 'error');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+
+            updateSaveStatus(message) {
+                const status = document.getElementById('saveStatus');
+                if (status) {
+                    status.textContent = message;
+                    setTimeout(() => {
+                        if (status) status.textContent = '💾 Sauvegarde auto active';
+                    }, 5000);
+                }
+            }
+        }
+
+        // === FONCTIONS GLOBALES ===
+        function showTab(tabName) {
+            game.showTab(tabName);
+        }
+
+        function generateNewTargets() {
+            game.generateAttackTargets();
+            game.playSound(600, 0.1, 'sine', 0.05);
+        }
+
+        // Initialisation du jeu
+        let game;
+        window.addEventListener('DOMContentLoaded', () => {
+            game = new CoinMasterGame();
+        });
+    </script>
+</body>
+</html>
