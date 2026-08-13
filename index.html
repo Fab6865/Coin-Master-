@@ -57,6 +57,20 @@
         .coins-icon { background: #FFD700; }
         .pins-icon { background: #FF6B6B; }
         .shield-icon { background: #4ECDC4; }
+        .raid-icon { background: #E74C3C; }
+
+        .camp-panel { background: rgba(231, 76, 60, 0.18); }
+
+        .camp-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .camp-info { flex: 1; min-width: 190px; font-size: 14px; line-height: 1.6; }
+        .camp-level { font-size: 34px; font-weight: bold; color: #FFD700; }
         .stat.full { box-shadow: inset 0 0 0 2px rgba(44,62,80,0.4); }
 
         #multiplierStat {
@@ -363,6 +377,13 @@
         }
 
         .player-card.revenge { background: linear-gradient(45deg, #8e44ad, #c0392b); }
+        .player-card.rich { background: linear-gradient(45deg, #f39c12, #e67e22); box-shadow: 0 0 0 3px #FFD700; }
+        .player-card.fresh { animation: freshIn 0.45s cubic-bezier(0.2, 1.3, 0.4, 1); }
+
+        @keyframes freshIn {
+            from { transform: scale(0.75) translateY(10px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
         .player-card:hover:not(:disabled) { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(255,107,107,0.4); }
         .player-card:disabled { background: linear-gradient(45deg, #7F8C8D, #95A5A6); cursor: not-allowed; opacity: 0.6; }
         .player-name { font-weight: bold; font-size: 17px; margin-bottom: 8px; }
@@ -519,9 +540,11 @@
         .streak-day.today { background: rgba(255,215,0,0.4); box-shadow: 0 0 0 2px #FFD700; }
 
         /* ---------- TOASTS / MODALES ---------- */
+        /* En bas de l'écran : en haut, les toasts masquaient le bandeau coins/pins
+           au moment précis où le joueur veut voir ses compteurs bouger. */
         .toast-container {
             position: fixed;
-            top: 12px; left: 50%;
+            bottom: 16px; left: 50%;
             transform: translateX(-50%);
             z-index: 3000;
             display: flex;
@@ -548,8 +571,8 @@
         .toast.warning { background: rgba(243, 156, 18, 0.95); }
         .toast.info { background: rgba(52, 152, 219, 0.95); }
 
-        @keyframes toastIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes toastOut { to { opacity: 0; transform: translateY(-16px); } }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { to { opacity: 0; transform: translateY(20px); } }
 
         .modal-overlay {
             position: fixed; inset: 0;
@@ -640,6 +663,10 @@
                 <div class="stat-icon pins-icon">🎯</div>
                 <span id="pins">5</span><span style="font-size:12px;opacity:0.7;" id="maxPins">/5</span>
             </div>
+            <div class="stat" id="raidsStat" title="Énergie de raid — sert uniquement aux attaques">
+                <div class="stat-icon raid-icon">⚔️</div>
+                <span id="raids">5</span><span style="font-size:12px;opacity:0.7;" id="maxRaids">/5</span>
+            </div>
             <div class="stat" id="shieldsStat">
                 <div class="stat-icon shield-icon">🛡️</div>
                 <span id="shields">3</span><span style="font-size:12px;opacity:0.7;" id="maxShields">/10</span>
@@ -716,11 +743,16 @@
         <div id="attacks" class="tab-content">
             <div id="revengeSection"></div>
 
+            <div class="panel camp-panel">
+                <h3>⚔️ Camp de guerre</h3>
+                <div class="camp-row" id="campRow"></div>
+            </div>
+
             <h2 class="section-title">⚔️ Choisir un Adversaire</h2>
-            <p class="section-sub">1 attaque = 1 🎯 — chaque adversaire n'est attaquable qu'une fois.</p>
+            <p class="section-sub" id="attackSub">1 attaque = 1 ⚔️ — chaque adversaire n'est attaquable qu'une fois.</p>
             <div class="attacks-grid" id="attacksGrid"></div>
             <div style="text-align:center; margin-bottom:20px;">
-                <button class="control-btn" id="refreshTargetsBtn">🔄 Nouveaux Adversaires (200 💰)</button>
+                <button class="control-btn gold" id="scoutBtn">🔍 Repérer une cible fortunée (200 💰)</button>
             </div>
 
             <div class="panel">
@@ -757,9 +789,11 @@
             </div>
 
             <div class="panel">
-                <h3>🎯 Pins</h3>
+                <h3>🎯 Pins &amp; ⚔️ Énergie</h3>
                 <p style="font-size:14px;text-align:center;line-height:1.6;">
-                    1 pin toutes les 20 min · Chaque village terminé donne <strong>+1 pin max</strong> (10 maximum).<br>
+                    Les <strong>🎯 pins</strong> servent uniquement à la machine à sous, l'<strong>⚔️ énergie</strong> uniquement aux attaques.<br>
+                    1 pin toutes les 8 min · Chaque village terminé donne <strong>+2 pins max</strong> (30 maximum).<br>
+                    L'énergie se régénère seule et ne s'achète pas : améliorez le <strong>Camp de guerre</strong> pour en avoir plus.<br>
                     Chaque étoile de bâtiment rapporte <strong>+10 💰/h</strong> de revenus passifs.
                 </p>
             </div>
@@ -799,7 +833,7 @@
         <div class="bottom-controls">
             <div class="controls-grid">
                 <button class="control-btn" id="audioToggle">🔊 Sons</button>
-                <button class="control-btn" id="buyPinsBtn">🎯 Acheter Pins</button>
+                <button class="control-btn" id="buyPinsBtn">🎯 5 Pins (500 💰)</button>
                 <button class="control-btn" id="exportBtn">📤 Export</button>
                 <button class="control-btn" id="importBtn">📥 Import</button>
                 <button class="control-btn" id="saveBtn">💾 Sauver</button>
@@ -822,15 +856,31 @@
             SAVE_VERSION: '4.0',
             SYMBOL_HEIGHT: 40,
             STRIP_COPIES: 5,
-            PIN_INTERVAL: 20 * 60 * 1000,
-            BASE_MAX_PINS: 5,
-            ABS_MAX_PINS: 10,
+            // Un gros stock qui se remplit vite : le retour après une absence doit
+            // offrir une vraie session, pas 5 spins avalés en quinze secondes.
+            PIN_INTERVAL: 8 * 60 * 1000,
+            BASE_MAX_PINS: 15,
+            PINS_PER_VILLAGE: 2,
+            ABS_MAX_PINS: 30,
+
+            // Énergie de raid : ressource DISTINCTE des pins, réservée aux attaques.
+            // Deux réserves séparées = la machine à sous ne peut plus être délaissée
+            // au profit des attaques, chacune a sa propre monnaie.
+            // Elle ne s'achète JAMAIS contre des coins — seule sa capacité s'améliore,
+            // sinon on recrée la boucle infinie coins → attaques → coins.
+            BASE_MAX_RAIDS: 5,
+            RAID_INTERVAL_BASE: 30 * 60 * 1000,
+            RAID_INTERVAL_MIN: 15 * 60 * 1000,
+            RAID_INTERVAL_PER_CAMP: 90 * 1000,
+            CAMP_BASE_COST: 3000,
+            CAMP_GROWTH: 1.9,
+            CAMP_MAX: 15,
             MAX_SHIELDS: 10,
             SHIELD_COST: 150,
             SHIELDS_PER_PURCHASE: 2,
-            PIN_COST: 300,
-            PINS_PER_PURCHASE: 2,
-            TARGET_REFRESH_COST: 200,
+            PIN_COST: 500,
+            PINS_PER_PURCHASE: 5,
+            SCOUT_BASE_COST: 600,   // prix du repérage, multiplié par la puissance du joueur
             TARGET_COUNT: 5,
             NORMAL_ATTACK_INTERVAL: 5 * 60 * 60 * 1000,
             RICH_ATTACK_INTERVAL: 12 * 60 * 60 * 1000,
@@ -869,7 +919,7 @@
             shield:     { triple: '+3 🛡️', pair: '+1 🛡️' },
             multiplier: { triple: 'x5 · 45 s', pair: 'x2 · 30 s' },
             jackpot:    { triple: '2000 💰 + 🃏', pair: '400-700 💰' },
-            pins:       { triple: '+3 🎯', pair: '+1 🎯' }
+            pins:       { triple: '+8 🎯', pair: '+3 🎯' }
         };
 
         const PLAYER_NAMES = [
@@ -887,6 +937,16 @@
         };
 
         const RARITY_ORDER = ['common', 'common', 'rare', 'rare', 'epic'];
+
+        /**
+         * Rareté d'une carte. La 5e carte des quatre derniers villages est légendaire :
+         * sans ça, le tirage pouvait annoncer « Légendaire » sans qu'aucune carte
+         * ne le soit, et la revendait au prix d'une épique.
+         */
+        function cardRarity(vIdx, cIdx) {
+            if (cIdx === 4) return vIdx >= 4 ? 'legendary' : 'epic';
+            return RARITY_ORDER[cIdx];
+        }
 
         const VILLAGES = [
             // NB : on s'en tient à des emoji anciens, largement rendus par les polices système.
@@ -909,23 +969,23 @@
         ];
 
         const QUEST_POOL = [
-            { id: 'spin',    label: 'Lancer %n spins',              targets: [12, 20, 30], reward: { pins: 2, coins: 1000, xp: 40 } },
-            { id: 'jackpot', label: 'Décrocher %n jackpots',        targets: [1, 2, 3],    reward: { pins: 3, coins: 2000, xp: 80 } },
-            { id: 'attack',  label: 'Attaquer %n joueurs',          targets: [2, 3, 5],    reward: { pins: 2, coins: 1500, xp: 50 } },
-            { id: 'star',    label: 'Poser %n étoiles de village',  targets: [2, 3, 5],    reward: { pins: 2, coins: 2000, xp: 60 } },
-            { id: 'chest',   label: 'Ouvrir %n coffres',            targets: [1, 2, 3],    reward: { pins: 2, coins: 1500, xp: 50 } },
-            { id: 'earn',    label: 'Gagner %n coins',              targets: [4000, 8000, 15000], reward: { pins: 3, coins: 0, xp: 70 } },
-            { id: 'block',   label: 'Bloquer %n attaque(s)',        targets: [1, 2],       reward: { pins: 2, coins: 2500, xp: 60 } }
+            { id: 'spin',    label: 'Lancer %n spins',              targets: [25, 40, 60], reward: { pins: 5, coins: 1000, xp: 40 } },
+            { id: 'jackpot', label: 'Décrocher %n jackpots',        targets: [2, 3, 5],    reward: { pins: 6, coins: 2000, xp: 80 } },
+            { id: 'attack',  label: 'Attaquer %n joueurs',          targets: [3, 5, 8],    reward: { raids: 3, coins: 1500, xp: 50 } },
+            { id: 'star',    label: 'Poser %n étoiles de village',  targets: [2, 3, 5],    reward: { pins: 5, coins: 2000, xp: 60 } },
+            { id: 'chest',   label: 'Ouvrir %n coffres',            targets: [1, 2, 3],    reward: { pins: 5, coins: 1500, xp: 50 } },
+            { id: 'earn',    label: 'Gagner %n coins',              targets: [4000, 8000, 15000], reward: { pins: 6, coins: 0, xp: 70 } },
+            { id: 'block',   label: 'Bloquer %n attaque(s)',        targets: [1, 2],       reward: { pins: 5, coins: 2500, xp: 60 } }
         ];
 
         const STREAK_REWARDS = [
             { icon: '💰', label: '1 000',  apply: (g) => { g.addCoins(1000); return '+1 000 💰'; } },
-            { icon: '🎯', label: '2 pins', apply: (g) => { g.addPins(2); return '+2 🎯'; } },
+            { icon: '🎯', label: '6 pins', apply: (g) => { g.addPins(6); return '+6 🎯'; } },
             { icon: '💰', label: '2 500',  apply: (g) => { g.addCoins(2500); return '+2 500 💰'; } },
             { icon: '🃏', label: '1 carte', apply: (g) => { const c = g.grantCards(1); return `Carte : ${c[0].name}`; } },
             { icon: '🛡️', label: '3 bouc.', apply: (g) => { g.addShields(3); return '+3 🛡️'; } },
             { icon: '💰', label: '6 000',  apply: (g) => { g.addCoins(6000); return '+6 000 💰'; } },
-            { icon: '🎁', label: 'JACKPOT', apply: (g) => { g.addCoins(12000); g.addPins(5); const c = g.grantCards(2, 'rare'); return `+12 000 💰, +5 🎯 et ${c.length} cartes !`; } }
+            { icon: '🎁', label: 'JACKPOT', apply: (g) => { g.addCoins(12000); g.addPins(15); g.addRaids(5); const c = g.grantCards(2, 'rare'); return `+12 000 💰, +15 🎯, +5 ⚔️ et ${c.length} cartes !`; } }
         ];
 
         // ==================== HELPERS ====================
@@ -976,7 +1036,10 @@
             const now = Date.now();
             return {
                 coins: 1000,
-                pins: 5,
+                pins: CONFIG.BASE_MAX_PINS,   // on démarre jauge pleine : la 1re session doit être une vraie session
+                raids: CONFIG.BASE_MAX_RAIDS,
+                lastRaidTime: now,
+                camp: 0,
                 shields: 3,
                 level: 1,
                 xp: 0,
@@ -1053,7 +1116,7 @@
                 $('audioToggle').addEventListener('click', () => this.toggleAudio());
                 $('buyShieldBtn').addEventListener('click', () => this.buyShield());
                 $('buyPinsBtn').addEventListener('click', () => this.buyPins());
-                $('refreshTargetsBtn').addEventListener('click', () => this.refreshTargets());
+                $('scoutBtn').addEventListener('click', () => this.scoutRichTarget());
                 $('streakBtn').addEventListener('click', () => this.claimStreak());
                 $('exportBtn').addEventListener('click', () => this.exportSave());
                 $('saveBtn').addEventListener('click', () => this.manualSave());
@@ -1156,7 +1219,7 @@
                 if (target) target.classList.add('active');
                 if (buttonEl) buttonEl.classList.add('active');
 
-                if (tabName === 'attacks') { this.renderTargets(); this.renderRevenge(); this.renderLeaderboard(); }
+                if (tabName === 'attacks') { this.renderCamp(); this.renderTargets(); this.renderRevenge(); this.renderLeaderboard(); }
                 if (tabName === 'village') this.renderVillage();
                 if (tabName === 'cards') this.renderCards();
                 if (tabName === 'quests') this.renderQuests();
@@ -1279,7 +1342,7 @@
                     this.autoSpins = 0;
                     this.updateAutoButton();
                     this.playErrorSound();
-                    this.toast('❌ Plus de Pins ! Attendez ou achetez-en.', 'error');
+                    this.toast('❌ Plus de Pins ! Attendez ou achetez-en.', 'error', 'pins');
                     return;
                 }
 
@@ -1306,11 +1369,14 @@
                     this.spinning = false;
                     this.updateDisplay();
                     this.saveGame(true);
+                    // `autoSpins` = tours qu'il reste à LANCER. On décrémente au moment
+                    // du lancement, jamais après, sinon on en effectue un de trop.
                     if (this.autoSpins > 0 && this.state.pins > 0) {
                         this.autoSpins--;
                         this.updateAutoButton();
-                        setTimeout(() => { if (this.autoSpins >= 0 && !this.spinning) this.spin(); }, this.turbo ? 250 : 550);
-                    } else if (this.autoSpins <= 0) {
+                        setTimeout(() => { if (!this.spinning) this.spin(); }, this.turbo ? 250 : 550);
+                    } else {
+                        this.autoSpins = 0;
                         this.updateAutoButton();
                     }
                 }).catch(() => {
@@ -1326,7 +1392,10 @@
                 } else {
                     this.autoSpins = CONFIG.AUTO_SPIN_COUNT;
                     this.toast(`🔁 Auto-spin : ${CONFIG.AUTO_SPIN_COUNT} tours`, 'info');
-                    if (!this.spinning) this.spin();
+                    if (!this.spinning) {
+                        this.autoSpins--;   // le tour lancé tout de suite compte dans le total
+                        this.spin();
+                    }
                 }
                 this.updateAutoButton();
             }
@@ -1402,7 +1471,7 @@
                                          : `${marks} Boucliers au maximum`;
                     }
                     case 'pins': {
-                        const added = this.addPins(triple ? 3 : 1);
+                        const added = this.addPins(triple ? 8 : 3);
                         this.playCoinSound();
                         return added > 0 ? `${marks} +${added} Pin${added > 1 ? 's' : ''} !`
                                          : `${marks} Pins au maximum`;
@@ -1571,7 +1640,63 @@
 
             getTotalMultiplier() { return this.getMultiplier() * (this.isGoldenHour() ? CONFIG.GOLDEN_MULT : 1); }
 
-            getMaxPins() { return Math.min(CONFIG.BASE_MAX_PINS + this.state.villagesDone, CONFIG.ABS_MAX_PINS); }
+            getMaxPins() {
+                return Math.min(CONFIG.BASE_MAX_PINS + this.state.villagesDone * CONFIG.PINS_PER_VILLAGE, CONFIG.ABS_MAX_PINS);
+            }
+
+            // ---------- ÉNERGIE DE RAID ----------
+            getMaxRaids() { return CONFIG.BASE_MAX_RAIDS + this.state.camp; }
+
+            /** Chaque niveau de Camp accélère aussi un peu la régénération. */
+            raidInterval() {
+                return Math.max(CONFIG.RAID_INTERVAL_MIN,
+                    CONFIG.RAID_INTERVAL_BASE - this.state.camp * CONFIG.RAID_INTERVAL_PER_CAMP);
+            }
+
+            addRaids(n) {
+                const added = clamp(this.getMaxRaids() - this.state.raids, 0, n);
+                this.state.raids += added;
+                return added;
+            }
+
+            spendRaid() {
+                const wasFull = this.state.raids >= this.getMaxRaids();
+                this.state.raids = Math.max(0, this.state.raids - 1);
+                if (wasFull) this.state.lastRaidTime = Date.now();
+            }
+
+            campCost() {
+                return Math.floor(CONFIG.CAMP_BASE_COST * Math.pow(CONFIG.CAMP_GROWTH, this.state.camp));
+            }
+
+            /**
+             * Seul moyen d'augmenter durablement la capacité d'attaque : un puits à coins
+             * permanent, qui ne se réinitialise pas d'un village à l'autre.
+             */
+            upgradeCamp() {
+                if (this.state.camp >= CONFIG.CAMP_MAX) {
+                    this.playErrorSound();
+                    this.toast(`⚔️ Camp au niveau maximum (${CONFIG.CAMP_MAX})`, 'warning');
+                    return;
+                }
+                const cost = this.campCost();
+                if (this.state.coins < cost) {
+                    this.playErrorSound();
+                    this.toast(`❌ Il manque ${fmt(cost - this.state.coins)} 💰`, 'error');
+                    return;
+                }
+                this.spendCoins(cost);
+                this.state.camp++;
+                this.addRaids(1);           // le niveau gagné est immédiatement utilisable
+                this.addXp(40);
+                this.playWinSound();
+                this.coinRain(10);
+                this.toast(`⚔️ Camp de guerre niveau ${this.state.camp} ! Énergie max ${this.getMaxRaids()}`, 'success');
+                this.log(`⚔️ Camp de guerre amélioré (niveau ${this.state.camp})`);
+                this.renderCamp();
+                this.updateDisplay();
+                this.saveGame(true);
+            }
 
             // ---------- XP / NIVEAU ----------
             xpNeeded(level) { return Math.floor(100 + (level - 1) * 90); }
@@ -1586,9 +1711,10 @@
                     const reward = 400 * this.state.level;
                     this.state.coins += reward;
                     this.state.stats.earned += reward;
-                    this.addPins(1);
+                    this.addPins(3);
+                    this.addRaids(1);
                     if (this.state.level % 5 === 0) this.addShields(2);
-                    this.toast(`🌟 Niveau ${this.state.level} ! +${fmt(reward)} 💰 +1 🎯`, 'success');
+                    this.toast(`🌟 Niveau ${this.state.level} ! +${fmt(reward)} 💰 +3 🎯 +1 ⚔️`, 'success');
                 }
                 if (leveled) { this.playBigWinSound(); this.coinRain(14); }
             }
@@ -1645,7 +1771,8 @@
                 const bonus = 8000 * (this.state.village + 1);
                 this.state.villagesDone++;
                 this.addCoins(bonus);
-                this.addPins(5);
+                this.addPins(15);
+                this.addRaids(5);
                 this.addShields(3);
                 this.addXp(250);
                 const cards = this.grantCards(2);
@@ -1657,7 +1784,7 @@
                 const next = this.currentVillage();
                 this.modal(`🎉 ${v.name} terminé !`,
                     `<div style="font-size:56px;margin:10px;">${v.icon}</div>
-                     <p style="margin-bottom:10px;">Récompenses : <strong>+${fmt(bonus)} 💰</strong>, +5 🎯, +3 🛡️</p>
+                     <p style="margin-bottom:10px;">Récompenses : <strong>+${fmt(bonus)} 💰</strong>, +15 🎯, +5 ⚔️, +3 🛡️</p>
                      <p style="margin-bottom:10px;">Cartes obtenues : ${cards.map(c => escapeHtml(c.name)).join(', ')}</p>
                      <p style="margin-bottom:10px;">🎯 Pins max : <strong>${this.getMaxPins()}</strong></p>
                      <hr style="opacity:0.3;margin:14px 0;">
@@ -1687,14 +1814,22 @@
             /** Tire `n` cartes parmi les villages débloqués et les ajoute à la collection. */
             grantCards(n, minRarity) {
                 const drawn = [];
+                const unlocked = this.unlockedVillages();
+                // Toutes les cartes accessibles, regroupées par rareté.
+                const byRarity = {};
+                for (let v = 0; v < unlocked; v++) {
+                    for (let c = 0; c < 5; c++) {
+                        const r = cardRarity(v, c);
+                        (byRarity[r] = byRarity[r] || []).push([v, c]);
+                    }
+                }
+
                 for (let i = 0; i < n; i++) {
-                    const rarity = this.rollRarity(minRarity);
-                    const vIdx = Math.floor(Math.random() * this.unlockedVillages());
-                    // On cherche une carte du village qui correspond à la rareté tirée.
-                    let cIdx = RARITY_ORDER.indexOf(rarity);
-                    if (cIdx === -1) cIdx = 4;
-                    const candidates = RARITY_ORDER.map((r, i2) => (r === rarity ? i2 : -1)).filter(i2 => i2 >= 0);
-                    cIdx = candidates.length ? pick(candidates) : 4;
+                    let rarity = this.rollRarity(minRarity);
+                    // Rareté tirée mais absente des villages débloqués (une légendaire
+                    // avant le 5e village) : on redescend d'un cran au lieu de mentir.
+                    if (!byRarity[rarity]) rarity = byRarity.epic ? 'epic' : 'common';
+                    const [vIdx, cIdx] = pick(byRarity[rarity]);
 
                     const id = cardId(vIdx, cIdx);
                     const isNew = !this.state.cards[id];
@@ -1745,8 +1880,8 @@
                 Object.keys(this.state.cards).forEach(id => {
                     const dupes = this.state.cards[id] - 1;
                     if (dupes <= 0) return;
-                    const cIdx = parseInt(id.split('-')[1], 10);
-                    const rarity = RARITY_ORDER[cIdx] || 'common';
+                    const [vIdx, cIdx] = id.split('-').map(Number);
+                    const rarity = cardRarity(vIdx, cIdx) || 'common';
                     total += RARITY[rarity].sell * dupes;
                     count += dupes;
                     this.state.cards[id] = 1;
@@ -1853,10 +1988,14 @@
                 q.claimed = true;
                 if (def.reward.coins) this.addCoins(def.reward.coins);
                 const pins = this.addPins(def.reward.pins || 0);
+                const raids = this.addRaids(def.reward.raids || 0);
                 this.addXp(def.reward.xp || 0);
                 this.playWinSound();
                 this.coinRain(12);
-                this.toast(`📜 Quête validée ! +${fmt(def.reward.coins || 0)} 💰 +${pins} 🎯`, 'success');
+                const gains = [`+${fmt(def.reward.coins || 0)} 💰`];
+                if (pins) gains.push(`+${pins} 🎯`);
+                if (raids) gains.push(`+${raids} ⚔️`);
+                this.toast(`📜 Quête validée ! ${gains.join(' ')}`, 'success');
                 this.renderQuests();
                 this.updateDisplay();
                 this.updateTabDots();
@@ -1893,8 +2032,31 @@
             }
 
             // ---------- ADVERSAIRES / ATTAQUES ----------
+            /** Puissance du joueur : sert au prix du repérage et à la richesse des cibles. */
+            playerPower() { return 1 + this.state.village * 0.9 + this.state.level * 0.05; }
+
+            /**
+             * Probabilité exacte de l'emporter, calculée sur les deux tirages en jeu :
+             * attaque = 75-225 (+8/niveau, +60 en vengeance), défense = niveau×10 + 0-50.
+             */
+            winChance(target, isRevenge) {
+                if (target.shields > 0) return 0;          // bouclier = coup bloqué à coup sûr
+                const attackBase = 75 + this.state.level * 8 + (isRevenge ? 60 : 0);
+                const defBase = target.level * 10;
+                let wins = 0;
+                for (let d = 0; d <= 50; d++) {
+                    const seuil = defBase + d - attackBase;               // il faut tirer >= seuil
+                    wins += clamp(151 - Math.max(0, seuil), 0, 151);
+                }
+                return wins / (51 * 151);
+            }
+
+            scoutCost() {
+                return Math.round(CONFIG.SCOUT_BASE_COST * this.playerPower() / 10) * 10;
+            }
+
             createTarget() {
-                const power = 1 + this.state.village * 0.9 + this.state.level * 0.05;
+                const power = this.playerPower();
                 return {
                     id: Math.random().toString(36).slice(2, 10),
                     name: pick(PLAYER_NAMES),
@@ -1911,19 +2073,44 @@
                 }
             }
 
-            refreshTargets(free = false) {
-                if (!free) {
-                    if (this.state.targets.every(t => t.attacked)) free = true;
-                    else if (this.state.coins < CONFIG.TARGET_REFRESH_COST) {
-                        this.playErrorSound();
-                        this.toast(`❌ Pas assez de Coins ! (${CONFIG.TARGET_REFRESH_COST} requis)`, 'error');
-                        return;
-                    }
+            /**
+             * Achète une cible grasse, à la place de la plus pauvre de la grille.
+             * Le prix suit la progression du joueur (sinon 200 coins fixes rapportaient
+             * jusqu'à 55 000 au dernier village), et la cible est un vrai adversaire :
+             * pas de bouclier, mais une défense calibrée sur ~75 % de réussite.
+             */
+            scoutRichTarget() {
+                const cost = this.scoutCost();
+                if (this.state.coins < cost) {
+                    this.playErrorSound();
+                    this.toast(`❌ Il manque ${fmt(cost - this.state.coins)} 💰`, 'error');
+                    return;
                 }
-                if (!free) this.spendCoins(CONFIG.TARGET_REFRESH_COST);
-                this.state.targets = Array.from({ length: CONFIG.TARGET_COUNT }, () => this.createTarget());
+                this.spendCoins(cost);
+
+                const power = this.playerPower();
+                const rich = {
+                    id: Math.random().toString(36).slice(2, 10),
+                    name: pick(PLAYER_NAMES),
+                    // 0,8 par niveau = exactement la vitesse à laquelle grandit votre attaque :
+                    // le risque reste identique du début à la fin du jeu.
+                    level: Math.max(1, Math.round(9 + 0.8 * this.state.level) + randInt(-3, 3)),
+                    coins: Math.floor(randInt(8000, 25000) * power),
+                    shields: 0,
+                    attacked: false,
+                    rich: true
+                };
+
+                // On sacrifie la cible la moins intéressante encore debout.
+                let worst = 0;
+                this.state.targets.forEach((t, i) => {
+                    if (t.coins < this.state.targets[worst].coins) worst = i;
+                });
+                this.state.targets[worst] = rich;
+                this.freshTargetId = rich.id;
+
                 this.playCoinSound();
-                this.toast(free ? '🔄 Nouveaux adversaires !' : `🔄 Nouveaux adversaires ! (-${CONFIG.TARGET_REFRESH_COST} 💰)`, 'success');
+                this.toast(`🔍 ${rich.name} repéré : ${fmt(rich.coins)} 💰, aucun bouclier — mais il se défend !`, 'success');
                 this.renderTargets();
                 this.updateDisplay();
                 this.saveGame(true);
@@ -1934,13 +2121,13 @@
                 const target = list.find(t => t.id === id);
                 if (!target || target.attacked) return;
 
-                if (this.state.pins <= 0) {
+                if (this.state.raids <= 0) {
                     this.playErrorSound();
-                    this.toast('❌ Pas assez de Pins !', 'error');
+                    this.toast(`⚔️ Plus d'énergie de raid ! Prochaine dans ${formatDuration(this.raidInterval() - (Date.now() - this.state.lastRaidTime))}`, 'error', 'raids');
                     return;
                 }
 
-                this.spendPin();
+                this.spendRaid();
                 this.trackQuest('attack', 1);
                 this.addXp(12);
 
@@ -1975,6 +2162,19 @@
                 if (isRevenge) this.state.revenge = this.state.revenge.filter(t => !t.attacked);
                 this.toast(result, type);
                 this.log(result);
+
+                // Une cible tombée est aussitôt remplacée : la grille reste pleine et vivante,
+                // plus de cartes grisées en attente. Une attaque bloquée, elle, laisse la cible
+                // en place — son bouclier est tombé, on peut réessayer.
+                if (!isRevenge && target.attacked) {
+                    const i = this.state.targets.indexOf(target);
+                    if (i !== -1) {
+                        const fresh = this.createTarget();
+                        this.state.targets[i] = fresh;
+                        this.freshTargetId = fresh.id;
+                    }
+                }
+
                 this.renderTargets();
                 this.renderRevenge();
                 this.updateDisplay();
@@ -1998,6 +2198,22 @@
                         this.state.lastPinTime = Math.min(now, this.state.lastPinTime + gained * CONFIG.PIN_INTERVAL);
                         if (isLoad) report.push(`🎯 +${added} pin${added > 1 ? 's' : ''} régénéré${added > 1 ? 's' : ''}`);
                         else { this.playCoinSound(); this.toast(`🎯 +${added} Pin${added > 1 ? 's' : ''} !`, 'success'); }
+                    }
+                }
+
+                // --- Énergie de raid (même logique que les pins, rythme plus lent) ---
+                const maxRaids = this.getMaxRaids();
+                const raidInt = this.raidInterval();
+                if (this.state.raids >= maxRaids) {
+                    this.state.lastRaidTime = now;
+                } else {
+                    const gagnes = Math.floor((now - this.state.lastRaidTime) / raidInt);
+                    if (gagnes > 0) {
+                        const added = Math.min(gagnes, maxRaids - this.state.raids);
+                        this.state.raids += added;
+                        this.state.lastRaidTime = Math.min(now, this.state.lastRaidTime + gagnes * raidInt);
+                        if (isLoad) report.push(`⚔️ +${added} énergie de raid`);
+                        else { this.playShieldSound(); this.toast(`⚔️ +${added} énergie de raid !`, 'success'); }
                     }
                 }
 
@@ -2046,29 +2262,37 @@
                 const rich = kind === 'rich';
                 const percent = rich ? 0.20 + Math.random() * 0.15 : 0.15 + Math.random() * 0.10;
 
-                let line;
+                let line, loot;
                 if (this.state.shields > 0) {
                     this.state.shields--;
                     this.state.stats.blocked++;
                     this.trackQuest('block', 1);
                     line = `🛡️ ${attacker}${rich ? ' (RICHE)' : ''} bloqué ! Boucliers : ${this.state.shields}`;
-                    if (!silent) { this.playShieldSound(); this.toast(line, 'info'); }
+                    loot = Math.max(2000, Math.floor(this.state.coins * 0.4));
+                    if (!silent) { this.playShieldSound(); this.toast(line + ' Ripostez !', 'info'); }
                 } else {
                     const stolen = this.loseCoins(Math.floor(this.state.coins * percent));
                     line = `💥 ${attacker} vous vole ${fmt(stolen)} coins${rich ? ' (MAJEURE)' : ''} !`;
+                    loot = Math.max(2000, Math.floor(stolen * randInt(3, 6)));
                     if (!silent) { this.playAttackSound(); this.toast(line + ' Vengez-vous !', 'error'); }
-                    // L'agresseur devient une cible de vengeance : boucle de rétention très efficace.
-                    this.state.revenge.unshift({
-                        id: Math.random().toString(36).slice(2, 10),
-                        name: attacker,
-                        level: randInt(3, 15),
-                        coins: Math.max(2000, Math.floor(stolen * randInt(3, 6))),
-                        shields: Math.random() < 0.3 ? 1 : 0,
-                        attacked: false,
-                        at: Date.now()
-                    });
-                    this.state.revenge = this.state.revenge.slice(0, CONFIG.MAX_REVENGE);
                 }
+
+                // L'agresseur devient une cible de vengeance, qu'il ait réussi son vol
+                // ou qu'un bouclier l'ait arrêté : il a tenté, on peut riposter.
+                this.state.revenge.unshift({
+                    id: Math.random().toString(36).slice(2, 10),
+                    name: attacker,
+                    level: randInt(3, 15),
+                    coins: loot,
+                    shields: Math.random() < 0.3 ? 1 : 0,
+                    attacked: false,
+                    at: Date.now()
+                });
+                this.state.revenge = this.state.revenge.slice(0, CONFIG.MAX_REVENGE);
+
+                // Sans ça, la carte n'apparaissait qu'au prochain changement d'onglet.
+                if (!silent) { this.renderRevenge(); this.updateTabDots(); }
+
                 this.log(line);
                 return line;
             }
@@ -2077,6 +2301,10 @@
             tick() {
                 this.rollQuests();
                 this.catchUp(false);
+                // Le compte à rebours du coffre gratuit vit sur l'onglet Cartes :
+                // sans ça il restait figé tant qu'on ne changeait pas d'onglet.
+                if ($('cards').classList.contains('active')) this.renderCards();
+                if ($('attacks').classList.contains('active')) this.renderCamp();
                 this.updateTimer();
                 this.updateMultiplierDisplay();
                 this.updateGolden();
@@ -2112,7 +2340,6 @@
                 document.body.classList.toggle('golden', active);
                 banner.classList.toggle('hidden', !active);
                 if (active) banner.textContent = `🌟 HEURE DORÉE — tous les gains x2 ! Encore ${formatDuration(info.endsIn)}`;
-                else if (!banner.classList.contains('hidden')) banner.classList.add('hidden');
             }
 
             updateTitle() {
@@ -2151,6 +2378,7 @@
                 this.updateTimer();
                 this.updateMultiplierDisplay();
                 this.updateGolden();
+                this.renderCamp();
                 this.renderTargets();
                 this.renderRevenge();
                 this.renderLeaderboard();
@@ -2165,9 +2393,16 @@
 
             updateDisplay() {
                 const maxPins = this.getMaxPins();
+                // Un avertissement « plus de ressource » n'a plus lieu d'être dès qu'elle revient
+                // (montée de niveau, quête, régénération…).
+                if (this.state.pins > 0) this.clearToast('pins');
+                if (this.state.raids > 0) this.clearToast('raids');
                 this.animateCoins();
                 $('pins').textContent = this.state.pins;
                 $('maxPins').textContent = `/${maxPins}`;
+                $('raids').textContent = this.state.raids;
+                $('maxRaids').textContent = `/${this.getMaxRaids()}`;
+                $('raidsStat').classList.toggle('full', this.state.raids >= this.getMaxRaids());
                 $('shields').textContent = this.state.shields;
                 $('maxShields').textContent = `/${CONFIG.MAX_SHIELDS}`;
                 $('pinsStat').classList.toggle('full', this.state.pins >= maxPins);
@@ -2280,7 +2515,7 @@
                             ${v.cards.map((label, i) => {
                                 const { icon, name } = splitEmoji(label);
                                 const count = this.state.cards[cardId(vIdx, i)] || 0;
-                                const rarity = RARITY_ORDER[i];
+                                const rarity = cardRarity(vIdx, i);
                                 return `<div class="card r-${rarity} ${count ? '' : 'locked'}">
                                     ${count > 1 ? `<span class="card-dupe">x${count}</span>` : ''}
                                     <div class="card-emoji">${count ? icon : '❔'}</div>
@@ -2321,7 +2556,7 @@
                     row.innerHTML = `
                         <div class="quest-top">
                             <span class="quest-name">${escapeHtml(def.label.replace('%n', fmt(q.target)))}</span>
-                            <span class="quest-reward">+${def.reward.pins} 🎯${def.reward.coins ? ' +' + fmt(def.reward.coins) + ' 💰' : ''}</span>
+                            <span class="quest-reward">${def.reward.pins ? '+' + def.reward.pins + ' 🎯' : ''}${def.reward.raids ? '+' + def.reward.raids + ' ⚔️' : ''}${def.reward.coins ? ' +' + fmt(def.reward.coins) + ' 💰' : ''}</span>
                         </div>
                         <div class="quest-bar"><div class="quest-fill" style="width:${clamp(q.progress / q.target * 100, 0, 100)}%"></div></div>
                         <div class="quest-foot">
@@ -2335,27 +2570,80 @@
                 });
             }
 
+            renderCamp() {
+                const row = $('campRow');
+                if (!row) return;
+                const max = this.state.camp >= CONFIG.CAMP_MAX;
+                const cost = this.campCost();
+                const mins = Math.round(this.raidInterval() / 60000);
+                row.innerHTML = `
+                    <div class="camp-info">
+                        <span class="camp-level">Niv. ${this.state.camp}</span><br>
+                        ⚔️ Énergie max : <strong>${this.getMaxRaids()}</strong> · 1 énergie toutes les <strong>${mins} min</strong><br>
+                        <span style="opacity:0.85;font-size:13px;">Chaque niveau : +1 énergie max et régénération plus rapide.</span>
+                    </div>
+                    <button class="control-btn ${max ? '' : 'gold'}" id="campBtn" ${max ? 'disabled' : ''}>
+                        ${max ? '⚔️ Niveau maximum' : `⚔️ Améliorer (${fmt(cost)} 💰)`}
+                    </button>`;
+                const btn = $('campBtn');
+                if (btn && !max) btn.addEventListener('click', () => this.upgradeCamp());
+
+                const sub = $('attackSub');
+                if (sub) {
+                    const reste = this.state.raids >= this.getMaxRaids()
+                        ? 'réserve pleine'
+                        : `prochaine dans ${formatDuration(this.raidInterval() - (Date.now() - this.state.lastRaidTime))}`;
+                    sub.innerHTML = `1 attaque = 1 ⚔️ — il vous reste <strong>${this.state.raids}/${this.getMaxRaids()}</strong> (${reste}).`;
+                }
+            }
+
+            /** Étiquette de risque affichée sur la carte — répond au « pourquoi j'ai perdu ? ». */
+            oddsLabel(target, isRevenge) {
+                if (target.shields > 0) return '⚔️ Bouclier à briser d\'abord';
+                const p = Math.round(this.winChance(target, isRevenge) * 100);
+                const couleur = p >= 80 ? '#2ecc71' : p >= 50 ? '#f1c40f' : '#e74c3c';
+                return `⚔️ <strong style="color:${couleur}">${p} % de réussite</strong>`;
+            }
+
             renderTargets() {
+                const scout = $('scoutBtn');
+                if (scout) scout.textContent = `🔍 Repérer une cible fortunée (${fmt(this.scoutCost())} 💰)`;
+
                 const grid = $('attacksGrid');
                 grid.innerHTML = '';
                 this.state.targets.forEach(t => {
                     const card = document.createElement('button');
                     card.type = 'button';
-                    card.className = 'player-card';
+                    card.className = 'player-card'
+                        + (t.rich ? ' rich' : '')
+                        + (t.id === this.freshTargetId ? ' fresh' : '');
                     card.disabled = t.attacked;
                     card.innerHTML = `
-                        <div class="player-name">👤 ${escapeHtml(t.name)}</div>
+                        <div class="player-name">${t.rich ? '💎' : '👤'} ${escapeHtml(t.name)}</div>
                         <div class="player-stats">🏆 Niveau ${t.level}<br>💰 ${fmt(t.coins)} coins<br>🛡️ ${t.shields} bouclier${t.shields > 1 ? 's' : ''}
+                        <br>${this.oddsLabel(t, false)}
+                        ${t.rich ? '<br><strong>CIBLE FORTUNÉE</strong>' : ''}
                         ${t.attacked ? '<br><em>Déjà attaqué</em>' : ''}</div>`;
                     if (!t.attacked) card.addEventListener('click', () => this.attackTarget(t.id));
                     grid.appendChild(card);
                 });
+                this.freshTargetId = null;
             }
 
             renderRevenge() {
                 const section = $('revengeSection');
                 const list = this.state.revenge || [];
-                if (!list.length) { section.innerHTML = ''; return; }
+                // État vide explicite : une section qui disparaît donne l'impression
+                // que la fonctionnalité a été retirée.
+                if (!list.length) {
+                    section.innerHTML = `
+                        <h2 class="section-title">😡 Vengeance</h2>
+                        <p class="section-sub" style="margin-bottom:20px;">
+                            Personne à qui rendre la monnaie pour l'instant.<br>
+                            Le prochain joueur qui vous attaquera apparaîtra ici — avec +45 % de butin à la clé.
+                        </p>`;
+                    return;
+                }
                 section.innerHTML = `
                     <h2 class="section-title">😡 Vengeance</h2>
                     <p class="section-sub">Ils vous ont volé. Ripostez : +45 % de butin.</p>
@@ -2367,7 +2655,8 @@
                     card.className = 'player-card revenge';
                     card.innerHTML = `
                         <div class="player-name">😡 ${escapeHtml(t.name)}</div>
-                        <div class="player-stats">🏆 Niveau ${t.level}<br>💰 ${fmt(t.coins)} coins<br>🛡️ ${t.shields} bouclier${t.shields > 1 ? 's' : ''}<br><strong>SE VENGER</strong></div>`;
+                        <div class="player-stats">🏆 Niveau ${t.level}<br>💰 ${fmt(t.coins)} coins<br>🛡️ ${t.shields} bouclier${t.shields > 1 ? 's' : ''}
+                        <br>${this.oddsLabel(t, true)}<br><strong>SE VENGER</strong></div>`;
                     card.addEventListener('click', () => this.attackTarget(t.id, true));
                     grid.appendChild(card);
                 });
@@ -2419,11 +2708,17 @@
                 }).join('');
             }
 
-            toast(text, type = 'info') {
+            /**
+             * `cle` marque un message lié à une condition temporaire (« plus de pins »).
+             * On peut alors le retirer dès que la condition cesse d'être vraie, au lieu
+             * de laisser un avertissement faux à l'écran pendant ses 3 secondes.
+             */
+            toast(text, type = 'info', cle) {
                 const container = $('toastContainer');
-                while (container.children.length >= 4) container.firstElementChild.remove();
+                while (container.children.length >= 3) container.firstElementChild.remove();
                 const el = document.createElement('div');
                 el.className = `toast ${type}`;
+                if (cle) el.dataset.toastKey = cle;
                 el.textContent = text;
                 el.style.pointerEvents = 'auto';
                 el.addEventListener('click', () => el.remove());
@@ -2432,6 +2727,10 @@
                     el.classList.add('out');
                     setTimeout(() => el.remove(), 300);
                 }, 3200);
+            }
+
+            clearToast(cle) {
+                document.querySelectorAll(`.toast[data-toast-key="${cle}"]`).forEach(el => el.remove());
             }
 
             modal(title, html, buttons, party) {
@@ -2551,6 +2850,9 @@
                     this.state.stars = s.stars.map(v => clamp(num(v, 0), 0, 5));
                 }
                 this.state.pins = clamp(num(s.pins, base.pins), 0, this.getMaxPins());
+                this.state.camp = clamp(num(s.camp, 0), 0, CONFIG.CAMP_MAX);
+                this.state.raids = clamp(num(s.raids, base.raids), 0, this.getMaxRaids());
+                this.state.lastRaidTime = time(s.lastRaidTime);
 
                 this.state.lastPinTime = time(s.lastPinTime);
                 this.state.lastAttackTime = time(s.lastAttackTime);
@@ -2590,6 +2892,7 @@
                     coins: num(t.coins, 500),
                     shields: clamp(num(t.shields, 0), 0, 5),
                     attacked: !!t.attacked,
+                    rich: !!t.rich,
                     at: time(t.at)
                 });
                 if (Array.isArray(s.targets)) this.state.targets = s.targets.filter(t => t && typeof t === 'object').map(mapPlayer).slice(0, CONFIG.TARGET_COUNT);
