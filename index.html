@@ -58,6 +58,7 @@
         .pins-icon { background: #FF6B6B; }
         .shield-icon { background: #4ECDC4; }
         .raid-icon { background: #E74C3C; }
+        .asc-icon { background: linear-gradient(45deg, #f39c12, #9b59b6); }
 
         .camp-panel { background: rgba(231, 76, 60, 0.18); }
 
@@ -244,6 +245,53 @@
             50% { box-shadow: inset 0 4px 8px rgba(255,215,0,0.8), 0 0 20px rgba(255,215,0,0.9); }
         }
 
+        .bet-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .bet-label {
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            margin-right: 2px;
+        }
+
+        .bet-chip {
+            background: rgba(255,255,255,0.18);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.35);
+            min-width: 40px;
+            padding: 7px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .bet-chip:hover:not(:disabled) { background: rgba(255,255,255,0.35); }
+
+        .bet-chip.on {
+            background: linear-gradient(45deg, #f39c12, #f1c40f);
+            border-color: #fff;
+            color: #4a2c00;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(241,196,15,0.45);
+        }
+
+        /* Mise plus chère que la réserve de Pins : visible mais toujours cliquable,
+           le spin ramènera automatiquement la mise au nombre de Pins disponibles. */
+        .bet-chip.poor { opacity: 0.4; }
+        .bet-chip.on.poor { opacity: 0.75; }
+        .bet-chip:disabled { cursor: not-allowed; }
+
         .spin-row {
             display: flex;
             align-items: center;
@@ -360,6 +408,38 @@
         .control-btn.danger { background: linear-gradient(45deg, #c0392b, #e74c3c); }
         .control-btn.gold { background: linear-gradient(45deg, #f39c12, #e67e22); }
         .control-btn.green { background: linear-gradient(45deg, #27ae60, #2ecc71); }
+
+        /* ---------- ASCENSION ---------- */
+        .ascension-panel {
+            background: linear-gradient(135deg, rgba(243,156,18,0.32), rgba(155,89,182,0.32));
+            border: 2px solid rgba(255,215,0,0.55);
+        }
+
+        .asc-mult {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.45);
+            line-height: 1.1;
+        }
+
+        .asc-sub { text-align: center; font-size: 13px; opacity: 0.9; margin-bottom: 14px; }
+
+        .asc-reqs { display: grid; gap: 8px; margin-bottom: 14px; font-size: 14px; }
+
+        .asc-req {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 9px 12px;
+            border-radius: 10px;
+        }
+
+        .asc-req strong { color: #FFD700; }
+        .asc-req.done { background: rgba(46,204,113,0.28); }
+        .asc-req.done strong { color: #2ecc71; }
 
         /* ---------- ATTAQUES ---------- */
         .attacks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(225px, 1fr)); gap: 14px; margin-bottom: 18px; }
@@ -634,6 +714,8 @@
             .stat { font-size: 15px; padding: 5px 11px; }
             .tab { font-size: 12px; min-width: 76px; padding: 12px 4px; }
             .spin-button { padding: 15px 34px; font-size: 20px; }
+            .bet-chip { min-width: 34px; padding: 6px 4px; font-size: 13px; }
+            .bet-row { gap: 4px; }
             .tab-content { padding: 14px; }
         }
 
@@ -671,6 +753,10 @@
                 <div class="stat-icon shield-icon">🛡️</div>
                 <span id="shields">3</span><span style="font-size:12px;opacity:0.7;" id="maxShields">/10</span>
             </div>
+            <div class="stat hidden" id="ascensionStat" title="Bonus permanent d'Ascension">
+                <div class="stat-icon asc-icon">🌠</div>
+                <span id="ascensionValue">x1</span>
+            </div>
             <div class="stat hidden" id="multiplierStat">
                 <span id="multiplierValue">x1</span>
                 <span style="font-size:12px;opacity:0.85;" id="multiplierTime"></span>
@@ -703,13 +789,19 @@
                 <div class="slot-frame" id="slotFrame"></div>
             </div>
 
+            <div class="bet-row" id="betRow">
+                <span class="bet-label">🎯 Mise :</span>
+            </div>
+
             <div class="spin-row">
                 <button class="mini-btn" id="turboBtn" title="Spins accélérés">⚡ Turbo</button>
                 <button class="spin-button" id="spinBtn">SPIN (1 Pin)</button>
                 <button class="mini-btn" id="autoBtn" title="Enchaîne les spins automatiquement">🔁 Auto</button>
             </div>
             <div class="spin-hint">
-                <strong>Espace</strong> = spin · Gain de la session : <strong id="sessionGain">0</strong> 💰
+                <strong>Espace</strong> = spin · <strong>↑ ↓</strong> = mise · Une mise x<span id="betHint">1</span>
+                coûte autant de Pins et multiplie les gains (Coins, Pins, Boucliers) par x<span id="betHint2">1</span>.<br>
+                Gain de la session : <strong id="sessionGain">0</strong> 💰
             </div>
 
             <div class="timer-bar">⏰ Prochain Pin dans : <span class="countdown" id="countdown">--:--</span></div>
@@ -730,6 +822,7 @@
                     <div>Attaques bloquées<strong id="statBlocked">0</strong></div>
                     <div>Cartes<strong id="statCards">0</strong></div>
                     <div>Villages finis<strong id="statVillages">0</strong></div>
+                    <div>Ascension<strong id="statAscension">0</strong></div>
                 </div>
             </div>
 
@@ -785,6 +878,17 @@
                 </p>
                 <div style="text-align:center;margin-top:14px;">
                     <button class="control-btn" id="buyShieldBtn">🛡️ Acheter 2 Boucliers (150 💰)</button>
+                </div>
+            </div>
+
+            <div class="panel ascension-panel" id="ascensionPanel">
+                <h3>🌠 Ascension</h3>
+                <div class="asc-mult" id="ascMult">x1</div>
+                <div class="asc-sub" id="ascSub"></div>
+                <div class="asc-reqs" id="ascReqs"></div>
+                <p style="font-size:13px;line-height:1.6;margin-bottom:14px;" id="ascText"></p>
+                <div style="text-align:center;">
+                    <button class="control-btn gold" id="ascendBtn">🌠 Ascension</button>
                 </div>
             </div>
 
@@ -896,7 +1000,16 @@
             MAX_REVENGE: 4,
             REVENGE_TTL: 24 * 60 * 60 * 1000,
             AUTO_SPIN_COUNT: 10,
-            GOLDEN_MULT: 2
+            // Mise : chaque cran coûte autant de Pins qu'il multiplie les gains.
+            // Le joueur choisit son rythme — griller sa réserve vite pour de gros
+            // gains, ou faire durer la session en x1.
+            BET_LEVELS: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            GOLDEN_MULT: 2,
+
+            // Ascension : on rend les villages déjà terminés pour un bonus définitif.
+            // +50 % par palier, en addition et non en puissance : le jeu reste lisible
+            // même après dix ascensions (x6), là où un x1,5 composé exploserait.
+            ASCENSION_BONUS: 0.5
         };
 
         // ==================== DONNÉES ====================
@@ -994,6 +1107,8 @@
         const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
         const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
         const fmt = (n) => Math.floor(n).toLocaleString('fr-FR');
+        /** 1 -> « 1 », 1.5 -> « 1,5 » : un multiplicateur ne s'affiche pas comme un montant. */
+        const fmtMult = (m) => m.toFixed(m % 1 ? 1 : 0).replace('.', ',');
 
         function escapeHtml(str) {
             return String(str).replace(/[&<>"']/g, (c) => (
@@ -1055,6 +1170,8 @@
                 lastChestTime: now - CONFIG.FREE_CHEST_INTERVAL,
                 multiplier: 1,
                 multiplierUntil: 0,
+                bet: 1,
+                ascension: 0,
                 targets: [],
                 revenge: [],
                 quests: [],
@@ -1085,6 +1202,7 @@
                 this.loadGame();
                 this.buildReels();
                 this.buildPaytable();
+                this.buildBetRow();
                 this.setupEventListeners();
                 this.initAudio();
 
@@ -1116,6 +1234,7 @@
                 $('audioToggle').addEventListener('click', () => this.toggleAudio());
                 $('buyShieldBtn').addEventListener('click', () => this.buyShield());
                 $('buyPinsBtn').addEventListener('click', () => this.buyPins());
+                $('ascendBtn').addEventListener('click', () => this.confirmAscend());
                 $('scoutBtn').addEventListener('click', () => this.scoutRichTarget());
                 $('streakBtn').addEventListener('click', () => this.claimStreak());
                 $('exportBtn').addEventListener('click', () => this.exportSave());
@@ -1123,6 +1242,15 @@
                 $('resetBtn').addEventListener('click', () => this.confirmReset());
                 $('importBtn').addEventListener('click', () => $('importFile').click());
                 $('importFile').addEventListener('change', (e) => this.importSave(e));
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+                    const tag = (e.target.tagName || '').toLowerCase();
+                    if (tag === 'input' || tag === 'textarea') return;
+                    if (!$('home').classList.contains('active')) return;
+                    e.preventDefault();
+                    this.changeBet(e.key === 'ArrowUp' ? 1 : -1);
+                });
 
                 document.addEventListener('keydown', (e) => {
                     if (e.code !== 'Space' && e.key !== ' ') return;
@@ -1346,11 +1474,22 @@
                     return;
                 }
 
+                // Une mise plus chère que la réserve ne bloque pas le joueur :
+                // elle redescend au nombre de Pins encore disponibles.
+                const cost = Math.min(this.getBet(), this.state.pins);
+                if (cost < this.getBet()) {
+                    this.setBet(cost, true);
+                    this.clearToast('bet');
+                    this.toast(`🎯 Mise ramenée à x${cost} (Pins insuffisants)`, 'info', 'bet');
+                }
+
                 this.spinning = true;
-                this.spendPin();
+                this.spendPin(cost);
                 this.state.stats.spins++;
-                this.trackQuest('spin', 1);
-                this.addXp(4);
+                // Une mise x5 consomme 5 Pins : elle vaut 5 spins pour les quêtes,
+                // sinon monter la mise ferait stagner leur progression.
+                this.trackQuest('spin', cost);
+                this.addXp(4 * cost);
                 this.updateDisplay();
 
                 const results = [this.pickSymbol(), this.pickSymbol(), this.pickSymbol()];
@@ -1383,6 +1522,72 @@
                     this.spinning = false;
                     this.updateDisplay();
                 });
+            }
+
+            // ---------- MISE ----------
+            buildBetRow() {
+                const row = $('betRow');
+                if (!row) return;
+                this.betChips = CONFIG.BET_LEVELS.map(level => {
+                    const chip = document.createElement('button');
+                    chip.className = 'bet-chip';
+                    chip.textContent = `x${level}`;
+                    chip.title = `${level} Pin${level > 1 ? 's' : ''} par spin, gains x${level}`;
+                    chip.dataset.bet = level;
+                    chip.addEventListener('click', () => this.setBet(level));
+                    row.appendChild(chip);
+                    return chip;
+                });
+                this.updateBetRow();
+            }
+
+            getBet() {
+                return CONFIG.BET_LEVELS.includes(this.state.bet) ? this.state.bet : 1;
+            }
+
+            /** Multiplicateur des gains de la machine : bonus temporaires × mise. */
+            getSpinMultiplier() { return this.getTotalMultiplier() * this.getBet(); }
+
+            setBet(value, silent) {
+                const levels = CONFIG.BET_LEVELS;
+                // On retombe sur le cran valide immédiatement inférieur : c'est ce qui
+                // permet de rabaisser la mise au nombre de Pins restants.
+                const target = levels.includes(value)
+                    ? value
+                    : levels.reduce((best, l) => (l <= value && l > best ? l : best), levels[0]);
+                const changed = target !== this.state.bet;
+                this.state.bet = target;
+                this.updateBetRow();
+                if (!changed) return;
+                this.updateDisplay();
+                if (!silent) {
+                    this.playSound(420 + target * 30, 0.06, 'triangle', 0.05);
+                    // Un seul toast de mise à la fois : sinon monter la mise cran par
+                    // cran au clavier empile trois messages identiques.
+                    this.clearToast('bet');
+                    this.toast(`🎯 Mise x${target} — ${target} Pin${target > 1 ? 's' : ''} par spin`, 'info', 'bet');
+                    this.saveGame(true);
+                }
+            }
+
+            changeBet(delta) {
+                const levels = CONFIG.BET_LEVELS;
+                const i = clamp(levels.indexOf(this.getBet()) + delta, 0, levels.length - 1);
+                this.setBet(levels[i]);
+            }
+
+            updateBetRow() {
+                if (!this.betChips) return;
+                const bet = this.getBet();
+                this.betChips.forEach(chip => {
+                    const level = Number(chip.dataset.bet);
+                    chip.classList.toggle('on', level === bet);
+                    chip.classList.toggle('poor', level > this.state.pins);
+                    chip.disabled = this.spinning;
+                });
+                const hint = $('betHint'), hint2 = $('betHint2');
+                if (hint) hint.textContent = bet;
+                if (hint2) hint2.textContent = bet;
             }
 
             toggleAuto() {
@@ -1428,7 +1633,7 @@
                     this.coinRain(8);
                     this.toast(this.applyReward(matched, 'pair'), 'success');
                 } else {
-                    const consolation = randInt(30, 70);
+                    const consolation = randInt(30, 70) * this.getBet();
                     this.addCoins(consolation);
                     this.playCoinSound();
                     this.toast(`🎰 Consolation : +${consolation} Coins`, 'info');
@@ -1436,7 +1641,8 @@
             }
 
             applyReward(symbolData, tier) {
-                const mult = this.getTotalMultiplier();
+                const mult = this.getSpinMultiplier();
+                const bet = this.getBet();
                 const triple = tier === 'triple';
                 const s = symbolData.symbol;
                 const marks = triple ? s + s + s : s + s;
@@ -1465,13 +1671,13 @@
                         return `${marks} Petit Jackpot ! +${fmt(gain)} Coins`;
                     }
                     case 'shield': {
-                        const added = this.addShields(triple ? 3 : 1);
+                        const added = this.addShields((triple ? 3 : 1) * bet);
                         this.playShieldSound();
                         return added > 0 ? `${marks} +${added} Bouclier${added > 1 ? 's' : ''} !`
                                          : `${marks} Boucliers au maximum`;
                     }
                     case 'pins': {
-                        const added = this.addPins(triple ? 8 : 3);
+                        const added = this.addPins((triple ? 8 : 3) * bet);
                         this.playCoinSound();
                         return added > 0 ? `${marks} +${added} Pin${added > 1 ? 's' : ''} !`
                                          : `${marks} Pins au maximum`;
@@ -1503,7 +1709,7 @@
                 const enemy = pick(enemies);
                 const power = randInt(50, 150) + this.state.level * 8 + (triple ? 250 : 0);
                 if (power >= enemy.strength) {
-                    const reward = Math.floor(enemy.reward * this.getTotalMultiplier());
+                    const reward = Math.floor(enemy.reward * this.getSpinMultiplier());
                     this.addCoins(reward);
                     this.state.stats.raidsWon++;
                     this.playWinSound();
@@ -1609,9 +1815,9 @@
                 return added;
             }
 
-            spendPin() {
+            spendPin(n = 1) {
                 const wasFull = this.state.pins >= this.getMaxPins();
-                this.state.pins = Math.max(0, this.state.pins - 1);
+                this.state.pins = Math.max(0, this.state.pins - n);
                 if (wasFull) this.state.lastPinTime = Date.now();
             }
 
@@ -1638,10 +1844,17 @@
                 return { hour, endsIn: end - now };
             }
 
-            getTotalMultiplier() { return this.getMultiplier() * (this.isGoldenHour() ? CONFIG.GOLDEN_MULT : 1); }
+            getTotalMultiplier() {
+                return this.getMultiplier()
+                    * (this.isGoldenHour() ? CONFIG.GOLDEN_MULT : 1)
+                    * this.getAscensionMult();
+            }
 
             getMaxPins() {
-                return Math.min(CONFIG.BASE_MAX_PINS + this.state.villagesDone * CONFIG.PINS_PER_VILLAGE, CONFIG.ABS_MAX_PINS);
+                // Une ascension crédite définitivement les villages rendus : repartir au
+                // 1er village ne doit pas faire retomber la réserve de 30 à 15 Pins.
+                const credited = this.state.villagesDone + this.state.ascension * VILLAGES.length;
+                return Math.min(CONFIG.BASE_MAX_PINS + credited * CONFIG.PINS_PER_VILLAGE, CONFIG.ABS_MAX_PINS);
             }
 
             // ---------- ÉNERGIE DE RAID ----------
@@ -1782,21 +1995,133 @@
                 this.coinRain(45);
 
                 const next = this.currentVillage();
+                const ascReady = this.canAscend();
                 this.modal(`🎉 ${v.name} terminé !`,
                     `<div style="font-size:56px;margin:10px;">${v.icon}</div>
                      <p style="margin-bottom:10px;">Récompenses : <strong>+${fmt(bonus)} 💰</strong>, +15 🎯, +5 ⚔️, +3 🛡️</p>
                      <p style="margin-bottom:10px;">Cartes obtenues : ${cards.map(c => escapeHtml(c.name)).join(', ')}</p>
                      <p style="margin-bottom:10px;">🎯 Pins max : <strong>${this.getMaxPins()}</strong></p>
                      <hr style="opacity:0.3;margin:14px 0;">
-                     <p>Direction <strong>${escapeHtml(next.name)}</strong> ${next.icon}</p>`,
+                     ${ascReady
+                        ? `<p>🌠 <strong>Ascension disponible</strong> dans l'onglet Village !</p>`
+                        : `<p>Direction <strong>${escapeHtml(next.name)}</strong> ${next.icon}</p>`}`,
                     [{ label: 'En route !', style: 'background:#27ae60;' }], true);
                 this.log(`🏘️ ${v.name} terminé ! +${fmt(bonus)} coins`);
                 this.renderAll();
                 this.saveGame(true);
             }
 
+            // ---------- ASCENSION ----------
+            /** Bonus permanent gagné en rendant les villages terminés. */
+            getAscensionMult() { return 1 + this.state.ascension * CONFIG.ASCENSION_BONUS; }
+
+            allSetsClaimed() { return this.state.claimedSets.length >= VILLAGES.length; }
+
+            canAscend() {
+                return this.allSetsClaimed() && this.state.villagesDone >= VILLAGES.length;
+            }
+
+            announceCollectionComplete() {
+                const left = VILLAGES.length - this.state.villagesDone;
+                this.playBigWinSound();
+                this.coinRain(40);
+                this.modal('🃏 Collection intégrale !',
+                    `<div style="font-size:56px;margin:10px;">🌠</div>
+                     <p style="margin-bottom:10px;">Les <strong>${VILLAGES.length} collections</strong> sont réclamées. Vous avez tout vu du jeu… ou presque.</p>
+                     <p style="margin-bottom:10px;">${left > 0
+                        ? `Encore <strong>${left} village${left > 1 ? 's' : ''}</strong> à terminer et l'<strong>Ascension</strong> s'ouvrira : tout relancer contre <strong>+50 % de gains définitifs</strong>.`
+                        : `L'<strong>Ascension</strong> vous attend dans l'onglet <strong>Village</strong>.`}</p>`,
+                    [{ label: 'Compris !', style: 'background:#f39c12;' }], true);
+                this.log('🃏 Collection intégrale terminée !');
+            }
+
+            confirmAscend() {
+                if (!this.canAscend()) {
+                    this.playErrorSound();
+                    this.toast('🌠 Ascension verrouillée : terminez collections et villages.', 'error');
+                    return;
+                }
+                const next = this.state.ascension + 1;
+                const mult = fmtMult(1 + next * CONFIG.ASCENSION_BONUS);
+                this.modal(`🌠 Ascension ${next} ?`,
+                    `<p style="margin-bottom:12px;">Vous <strong>rendez</strong> vos ${VILLAGES.length} villages : retour au premier, étoiles à zéro,
+                     revenus passifs à zéro et fortune ramenée à <strong>${fmt(defaultState().coins)} 💰</strong>.</p>
+                     <p style="margin-bottom:12px;">Vous <strong>gardez</strong> vos cartes et collections, votre niveau, vos boucliers,
+                     votre énergie, votre camp et votre capacité de <strong>${this.getMaxPins()} 🎯 Pins</strong>.</p>
+                     <p style="margin-bottom:12px;">En échange, tous vos gains passent à <strong>x${mult}</strong>… pour toujours.</p>
+                     <p style="opacity:0.85;font-size:13px;">C'est <strong>irréversible</strong>. Exportez votre sauvegarde d'abord si vous hésitez.</p>`,
+                    [
+                        { label: 'Pas encore', style: 'background:#7F8C8D;' },
+                        { label: `🌠 Ascension x${mult}`, style: 'background:linear-gradient(45deg,#f39c12,#9b59b6);', action: () => this.ascend() }
+                    ]);
+            }
+
+            ascend() {
+                if (!this.canAscend()) return;
+                this.state.ascension++;
+                this.state.village = 0;
+                this.state.villagesDone = 0;
+                this.state.stars = [0, 0, 0, 0, 0];
+                this.state.coins = defaultState().coins;
+                this.state.lastIncomeTime = Date.now();
+                // Repartir la jauge pleine : la relance doit se jouer, pas s'attendre.
+                this.state.pins = this.getMaxPins();
+                this.sessionGain = 0;
+                this.displayedCoins = this.state.coins;
+                this.playBigWinSound();
+                this.coinRain(60);
+                this.log(`🌠 Ascension ${this.state.ascension} : gains x${fmtMult(this.getAscensionMult())} pour toujours`);
+                this.modal(`🌠 Ascension ${this.state.ascension} !`,
+                    `<div style="font-size:56px;margin:10px;">🌠</div>
+                     <p style="margin-bottom:10px;">Tous vos gains sont désormais multipliés par <strong>x${fmtMult(this.getAscensionMult())}</strong>, définitivement.</p>
+                     <p style="margin-bottom:10px;">Réserve complète : <strong>${this.state.pins} 🎯 Pins</strong>. Direction <strong>${escapeHtml(VILLAGES[0].name)}</strong> ${VILLAGES[0].icon}</p>`,
+                    [{ label: 'C\'est reparti !', style: 'background:#27ae60;' }], true);
+                this.renderAll();
+                this.updateDisplay();
+                this.saveGame(true);
+            }
+
+            updateAscension() {
+                const panel = $('ascensionPanel');
+                if (!panel) return;
+                const asc = this.state.ascension;
+                const total = VILLAGES.length;
+                const ready = this.canAscend();
+
+                $('ascMult').textContent = `x${fmtMult(this.getAscensionMult())}`;
+                $('ascSub').textContent = asc > 0
+                    ? `Palier ${asc} — bonus permanent sur tous les gains`
+                    : 'Aucune ascension — gains à leur valeur de base';
+
+                $('ascReqs').innerHTML = [
+                    ['🃏 Collections réclamées', this.state.claimedSets.length, total],
+                    ['🏘️ Villages terminés', this.state.villagesDone, total]
+                ].map(([label, cur, max]) =>
+                    `<div class="asc-req ${cur >= max ? 'done' : ''}"><span>${label}</span><strong>${Math.min(cur, max)}/${max}</strong></div>`
+                ).join('');
+
+                $('ascText').innerHTML = ready
+                    ? `Vous repartez du <strong>1er village</strong> avec <strong>${fmt(defaultState().coins)} 💰</strong> : étoiles, villages terminés et revenus passifs remis à zéro. Cartes, niveau, boucliers et capacité de Pins sont conservés — et chaque pièce gagnée vaut <strong>+50 %</strong> de plus, pour toujours.`
+                    : `Terminez les ${total} collections <em>et</em> les ${total} villages pour ouvrir l'Ascension : elle relance la progression des villages contre un bonus <strong>permanent</strong> de +50 % sur tous les gains.`;
+
+                const btn = $('ascendBtn');
+                btn.disabled = !ready;
+                btn.textContent = ready
+                    ? `🌠 Ascension ${asc + 1} — gains x${fmtMult(1 + (asc + 1) * CONFIG.ASCENSION_BONUS)}`
+                    : '🔒 Ascension verrouillée';
+
+                $('ascensionStat').classList.toggle('hidden', asc === 0);
+                $('ascensionValue').textContent = `x${fmtMult(this.getAscensionMult())}`;
+                $('statAscension').textContent = asc;
+            }
+
             // ---------- CARTES ----------
-            unlockedVillages() { return Math.min(this.state.village + 1, VILLAGES.length); }
+            unlockedVillages() {
+                // Après une ascension les cartes sont conservées : re-verrouiller les
+                // villages viderait les coffres de tout intérêt pendant des heures.
+                if (this.state.ascension > 0) return VILLAGES.length;
+                return Math.min(this.state.village + 1, VILLAGES.length);
+            }
 
             rollRarity(minRarity) {
                 const keys = Object.keys(RARITY);
@@ -1872,6 +2197,9 @@
                 this.renderCards();
                 this.updateDisplay();
                 this.saveGame(true);
+                // Le dernier set réclamé ouvre l'endgame : on le dit tout de suite,
+                // sinon rien ne signale au joueur qu'il vient de débloquer l'Ascension.
+                if (this.allSetsClaimed()) this.announceCollectionComplete();
             }
 
             sellDuplicates() {
@@ -2238,7 +2566,8 @@
             }
 
             getIncomeRate() {
-                return (this.totalStars() + this.state.villagesDone * 25) * CONFIG.INCOME_PER_STAR;
+                const base = (this.totalStars() + this.state.villagesDone * 25) * CONFIG.INCOME_PER_STAR;
+                return Math.floor(base * this.getAscensionMult());
             }
 
             processIncomingAttacks(now, silent) {
@@ -2369,6 +2698,7 @@
                 set('quests', questReady);
                 set('cards', cardsReady);
                 set('attacks', attackReady);
+                set('village', this.canAscend());
             }
 
             // ---------- RENDU ----------
@@ -2424,10 +2754,15 @@
                 $('statBlocked').textContent = s.blocked;
                 $('statCards').textContent = this.distinctCards();
                 $('statVillages').textContent = this.state.villagesDone;
+                this.updateAscension();
 
+                this.updateBetRow();
+                const cost = Math.min(this.getBet(), this.state.pins);
                 const btn = $('spinBtn');
                 btn.disabled = this.spinning || this.state.pins <= 0;
-                btn.textContent = this.state.pins > 0 ? 'SPIN (1 Pin)' : 'PLUS DE PINS';
+                btn.textContent = this.state.pins > 0
+                    ? `SPIN (${cost} Pin${cost > 1 ? 's' : ''})`
+                    : 'PLUS DE PINS';
             }
 
             buildPaytable() {
@@ -2845,6 +3180,8 @@
                 this.state.xp = num(s.xp, 0);
                 this.state.village = clamp(num(s.village, 0), 0, VILLAGES.length - 1);
                 this.state.villagesDone = clamp(num(s.villagesDone, 0), 0, 99);
+                // Avant les Pins : la capacité maximale dépend du palier d'ascension.
+                this.state.ascension = clamp(num(s.ascension, 0), 0, 999);
 
                 if (Array.isArray(s.stars) && s.stars.length === 5) {
                     this.state.stars = s.stars.map(v => clamp(num(v, 0), 0, 5));
@@ -2859,6 +3196,8 @@
                 this.state.lastRichAttackTime = time(s.lastRichAttackTime);
                 this.state.lastIncomeTime = time(s.lastIncomeTime !== undefined ? s.lastIncomeTime : parsed.saveTime);
                 this.state.lastChestTime = time(s.lastChestTime !== undefined ? s.lastChestTime : now - CONFIG.FREE_CHEST_INTERVAL);
+
+                this.state.bet = CONFIG.BET_LEVELS.includes(s.bet) ? s.bet : 1;
 
                 this.state.multiplier = (s.multiplier === 2 || s.multiplier === 5) ? s.multiplier : 1;
                 this.state.multiplierUntil = (typeof s.multiplierUntil === 'number' && s.multiplierUntil > now)
